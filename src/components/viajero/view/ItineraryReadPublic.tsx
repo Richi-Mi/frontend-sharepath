@@ -238,7 +238,7 @@ export default function ItineraryPublishView({ id }: { id: string }) {
         toast.error("Error", {
           description: "No pudimos cargar el itinerario.",
         });
-        router.push("/viajero/itinerarios");
+        router.push("/viajero");
       } finally {
         setLoading(false);
       }
@@ -309,7 +309,7 @@ export default function ItineraryPublishView({ id }: { id: string }) {
       await api.shareItinerary(Number(id), shareRequest);
 
       toast.success("¡Viaje publicado!", { id: toastId });
-      router.push("/viajero/itinerarios");
+      router.push("/viajero");
     } catch (error) {
       console.error("Error al publicar:", error);
       const errorMessage =

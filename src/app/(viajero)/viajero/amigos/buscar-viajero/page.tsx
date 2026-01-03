@@ -12,6 +12,7 @@ import {
   Loader2,
   MapPin,
   ChevronRight,
+  X, // <--- Importamos el icono X para cancelar
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,6 @@ interface ViajeroData {
   status?: number; // 0: pendiente/enviada, 1: desconocido, 2: amigo
 }
 
-// Tipo de sugerencia proveniente del backend
 interface FriendSuggestionApi {
   username: string;
   nombre_completo: string;
@@ -45,13 +45,14 @@ interface FriendSuggestionApi {
   foto_url?: string | null;
 }
 
-const API_URL = "https://harol-lovers.up.railway.app";
-
-// API instance
 const api = ItinerariosAPI.getInstance();
 
 async function sendFriendRequest(receiving: string) {
   return await api.sendFriendRequest(receiving);
+}
+
+async function cancelFriendRequest(receiving: string) {
+  return await api.cancelFriendRequest(receiving);
 }
 
 // ===== Componentes Internos =====
@@ -66,7 +67,6 @@ function ViajeroCard({
   const [status, setStatus] = useState<number | undefined>(data.status);
   const [isSending, setIsSending] = useState(false);
 
-  // Sincronizar estado cuando cambia la data (ej: nueva búsqueda)
   useEffect(() => {
     setStatus(data.status);
   }, [data.status]);
@@ -75,9 +75,32 @@ function ViajeroCard({
     e.preventDefault();
     e.stopPropagation();
 
-    // No hacer nada si ya está pendiente (0), es amigo (2) o se está enviando
-    if (isSending || status === 0 || status === 2) return;
+    // Si ya es amigo (2) o está cargando, no hacemos nada.
+    if (isSending || status === 2) return;
 
+    // LÓGICA PARA CANCELAR (Status 0)
+  if (status === 0) {
+  try {
+    setIsSending(true);
+
+    console.log("Cancelando solicitud a:", data.username);
+
+    await cancelFriendRequest(data.username);
+
+    toast.success("Solicitud cancelada");
+
+    setStatus(undefined); // vuelve a "Agregar"
+
+  } catch (error) {
+    console.error("No se pudo cancelar la solicitud:", error);
+    toast.error("No se pudo cancelar la solicitud");
+  } finally {
+    setIsSending(false);
+  }
+  return;
+}
+
+    // LÓGICA PARA ENVIAR (Status != 0 y != 2)
     try {
       setIsSending(true);
       console.log("Enviando solicitud a:", data.username);
@@ -87,7 +110,7 @@ function ViajeroCard({
       toast.success("Solicitud enviada correctamente");
       console.log("Respuesta del backend:", response);
 
-      setStatus(0); // Actualizar visualmente a "Enviada"
+      setStatus(0); // Actualizar visualmente a "Enviada/Cancelar"
 
       if (onSent) onSent(data.username);
     } catch (error) {
@@ -146,19 +169,21 @@ function ViajeroCard({
           <div className="flex items-center gap-3 pl-2">
             <Button
               size="sm"
-              // Si el status es 0 (pendiente) o 2 (amigo), botón gris (secondary)
-              variant={status === 0 || status === 2 ? "secondary" : "default"}
-              className={`h-8 px-3 text-xs font-medium transition-all ${
-                status === 0 || status === 2
-                  ? "text-muted-foreground bg-muted opacity-80 cursor-not-allowed" // Estilo deshabilitado visualmente
-                  : "shadow-sm"
+              variant={status === 2 ? "secondary" : status === 0 ? "ghost" : "default"}
+              className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
+                status === 2
+                  ? "text-muted-foreground bg-muted opacity-50 cursor-not-allowed" // Estilo Amigos
+                  : status === 0
+                  ? "bg-muted text-muted-foreground hover:bg-red-600 hover:text-white" // <--- ESTILO CANCELAR (Gris -> Rojo)
+                  : "shadow-sm" // Estilo Agregar
               }`}
               onClick={handleAdd}
-              disabled={status === 0 || status === 2 || isSending}
+              // IMPORTANTE: Quitamos "status === 0" del disabled para permitir el hover y el click
+              disabled={status === 2 || isSending}
             >
               {isSending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />{" "}
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   Enviando
                 </>
               ) : status === 2 ? (
@@ -166,8 +191,9 @@ function ViajeroCard({
                   <UserCheck className="mr-1.5 h-3.5 w-3.5" /> Amigo
                 </>
               ) : status === 0 ? (
+                // --- NUEVO ESTADO: CANCELAR ---
                 <>
-                  <UserCheck className="mr-1.5 h-3.5 w-3.5" /> Enviada
+                  <X className="mr-1.5 h-3.5 w-3.5" /> Cancelar
                 </>
               ) : (
                 <>
@@ -237,7 +263,7 @@ function SugerenciaCard({
             if (onConnect) onConnect(username);
           }}
         >
-          {status === "Solicitud enviada" ? "Pendiente" : "Enviar Solicitud"}
+          {status === "Solicitud enviada" ? "Pendiente" : "Agregar"}
         </Button>
       </CardContent>
     </Card>
@@ -304,21 +330,15 @@ export default function BuscarViajeroPage() {
     setHasSearched(true);
 
     try {
-      // 1. Obtener mi usuario (para saber quién soy yo en las relaciones)
       const myUserJson = localStorage.getItem("user");
       const myUsername = myUserJson ? JSON.parse(myUserJson).username : null;
 
-      // 2. Ejecutar promesas en paralelo
-      //    - Buscamos usuarios
-      //    - Traemos amigos (para status 2)
-      //    - Traemos solicitudes pendientes (para status 0)
       const [searchResp, friendsResp, requestsResp] = await Promise.all([
         api.searchUsers(term).catch(() => []),
         api.getFriends().catch(() => []),
-        api.getRequests().catch(() => []), // Endpoint /amigo/pendiente
+        api.getRequests().catch(() => []),
       ]);
 
-      // --- Normalizar Búsqueda ---
       let users: any[] = [];
       if (Array.isArray((searchResp as any).users))
         users = (searchResp as any).users;
@@ -326,11 +346,8 @@ export default function BuscarViajeroPage() {
         users = (searchResp as any).data;
       else if (Array.isArray(searchResp)) users = searchResp as any[];
 
-      // --- Crear Mapa de Estados ---
-      // Usamos un mapa para acceso rápido: username -> status
       const userStatus = new Map<string, number>();
 
-      // A) Mapear Amigos (Status 2)
       const friendsList = Array.isArray(friendsResp) ? friendsResp : [];
       friendsList.forEach((f: any) => {
         const friendUsername =
@@ -343,30 +360,24 @@ export default function BuscarViajeroPage() {
         }
       });
 
-      // B) Mapear Solicitudes Pendientes (Status 0)
-      // AQUÍ ESTÁ EL CAMBIO CLAVE PARA QUE FUNCIONE EL BOTÓN "ENVIADA"
       const requestsData =
         requestsResp && (requestsResp as any).data
           ? (requestsResp as any).data
           : [];
 
       requestsData.forEach((req: any) => {
-        // Obtenemos los usernames de ambos lados
         const sender = req.requesting_user?.username;
         const receiver = req.receiving_user?.username;
 
-        // Caso 1: Yo envié la solicitud (Saliente) -> El otro debe salir como "Enviada" (0)
         if (sender === myUsername && receiver) {
           userStatus.set(receiver, 0);
         }
 
-        // Caso 2: Yo recibí la solicitud (Entrante) -> El otro debe salir como "Pendiente" (0)
         if (receiver === myUsername && sender) {
           userStatus.set(sender, 0);
         }
       });
 
-      // 3. Cruzar datos finales
       const mapped: ViajeroData[] = users
         .map((u: any, idx: number) => ({
           id: u.id ?? idx,
@@ -375,10 +386,8 @@ export default function BuscarViajeroPage() {
           foto_url: u.foto_url || null,
           amigos_en_comun: u.amigos_en_comun || 0,
           ciudad: u.ciudad,
-          // Aquí aplicamos el estado encontrado en el mapa. Si no existe, es 1 (Agregar)
           status: userStatus.get(u.username) ?? 1,
         }))
-        // Filtramos para no mostrarme a mí mismo
         .filter((v) => v.username !== myUsername);
 
       setViajeros(mapped);
@@ -390,7 +399,6 @@ export default function BuscarViajeroPage() {
     }
   };
 
-  // Debounce para búsqueda
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (searchTerm) handleSearch(searchTerm);
@@ -402,7 +410,6 @@ export default function BuscarViajeroPage() {
     return () => clearTimeout(timeout);
   }, [searchTerm]);
 
-  // Cargar sugerencias desde el backend
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -425,7 +432,6 @@ export default function BuscarViajeroPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header Simplificado Sticky */}
       <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-16 max-w-3xl items-center gap-4 px-4">
           <Button
@@ -456,7 +462,6 @@ export default function BuscarViajeroPage() {
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 space-y-8">
-        {/* Sección de Resultados */}
         <section>
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 animate-in fade-in">
@@ -485,7 +490,6 @@ export default function BuscarViajeroPage() {
                       key={viajero.id}
                       data={viajero}
                       onSent={(username) => {
-                        // Actualizar localmente el array para que el botón cambie a "Enviada" de inmediato
                         setViajeros((prev) =>
                           prev.map((v) =>
                             v.username === username ? { ...v, status: 0 } : v
@@ -506,7 +510,6 @@ export default function BuscarViajeroPage() {
 
         <Separator className="bg-border/60" />
 
-        {/* Sección de Sugerencias */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 px-1">
             <div className="p-1.5 rounded-md bg-amber-500/10">

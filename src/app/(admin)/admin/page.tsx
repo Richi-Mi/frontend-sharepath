@@ -36,13 +36,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -62,19 +55,13 @@ type LugarCard = {
     longitud?: number;
 };
 
-const usuariosPorMes2024 = [
-    { mes: "Ene", usuarios: 45 }, { mes: "Feb", usuarios: 52 }, { mes: "Mar", usuarios: 68 },
-    { mes: "Abr", usuarios: 73 }, { mes: "May", usuarios: 85 }, { mes: "Jun", usuarios: 92 },
-    { mes: "Jul", usuarios: 105 }, { mes: "Ago", usuarios: 118 }, { mes: "Sep", usuarios: 125 },
-    { mes: "Oct", usuarios: 142 }, { mes: "Nov", usuarios: 158 }, { mes: "Dic", usuarios: 165 },
-];
-
-const usuariosPorMes2025 = [
-    { mes: "Ene", usuarios: 178 }, { mes: "Feb", usuarios: 192 }, { mes: "Mar", usuarios: 205 },
-    { mes: "Abr", usuarios: 218 }, { mes: "May", usuarios: 235 }, { mes: "Jun", usuarios: 248 },
-    { mes: "Jul", usuarios: 265 }, { mes: "Ago", usuarios: 282 }, { mes: "Sep", usuarios: 298 },
-    { mes: "Oct", usuarios: 315 }, { mes: "Nov", usuarios: 332 }, { mes: "Dic", usuarios: 350 },
-];
+// Generar datos solo de noviembre a diciembre (inicio del sistema)
+const generarDatosNoviembreADiciembre = (totalUsuarios: number) => {
+    return [
+        { mes: "Nov", usuarios: 0 },
+        { mes: "Dic", usuarios: totalUsuarios }
+    ];
+};
 
 const destinosPopulares: LugarCard[] = [
     {
@@ -118,7 +105,6 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
 // --- Componente Principal ---
 
 export default function DashboardAdmin() {
-    const [añoSeleccionado, setAñoSeleccionado] = useState("2025");
     const [destinoSeleccionado, setDestinoSeleccionado] = useState<null | LugarCard>(null);
     const [modalAbierto, setModalAbierto] = useState(false);
     const [statsData, setStatsData] = useState<DashboardStatsResponse | null>(null);
@@ -126,6 +112,7 @@ export default function DashboardAdmin() {
     const [lugares, setLugares] = useState<LugarCard[]>([]);
     const [loading, setLoading] = useState(true);
     const [saludo, setSaludo] = useState("");
+    const [datosGrafica, setDatosGrafica] = useState<{mes: string, usuarios: number}[]>([]);
 
     const api = ItinerariosAPI.getInstance();
 
@@ -144,7 +131,14 @@ export default function DashboardAdmin() {
                 try {
                     const stats = await api.getAdminStats();
                     setStatsData(stats);
-                } catch (e) { console.warn("Error stats", e); }
+                    // Generar datos de la gráfica: nov (0) -> dic (total real)
+                    const datosMensuales = generarDatosNoviembreADiciembre(stats.usuarios.total);
+                    setDatosGrafica(datosMensuales);
+                } catch (e) { 
+                    console.warn("Error stats", e);
+                    // Si falla, usar datos por defecto
+                    setDatosGrafica(generarDatosNoviembreADiciembre(27));
+                }
             
                 // Cargar reportes
                 try {
@@ -187,7 +181,8 @@ export default function DashboardAdmin() {
         fetchData();
     }, []);
 
-    const datosGrafica = añoSeleccionado === "2024" ? usuariosPorMes2024 : usuariosPorMes2025;
+    const usuariosActuales = statsData?.usuarios.total || 0;
+    const crecimientoMensual = statsData?.usuarios.crecimiento || "0%";
 
     if (loading) {
         return (
@@ -237,10 +232,10 @@ export default function DashboardAdmin() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-gray-900">{statsData?.usuarios.total ?? 0}</div>
+                            <div className="text-2xl font-bold text-gray-900">{usuariosActuales}</div>
                             <div className="flex items-center text-xs mt-1 text-green-600 font-medium">
                                 <ArrowUpRight className="h-3 w-3 mr-1" />
-                                +{statsData?.usuarios.crecimiento ?? "0%"} vs mes anterior
+                                +{crecimientoMensual} vs mes anterior
                             </div>
                         </CardContent>
                     </Card>
@@ -300,17 +295,13 @@ export default function DashboardAdmin() {
                                         <Activity className="h-5 w-5 text-indigo-500" />
                                         Crecimiento de Usuarios
                                     </CardTitle>
-                                    <CardDescription>Registro de nuevos usuarios en la plataforma</CardDescription>
+                                    <CardDescription>
+                                        Desde el lanzamiento del sistema (Noviembre 2025)
+                                    </CardDescription>
                                 </div>
-                                <Select value={añoSeleccionado} onValueChange={setAñoSeleccionado}>
-                                    <SelectTrigger className="w-[100px] bg-white">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="2024">2024</SelectItem>
-                                        <SelectItem value="2025">2025</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Badge className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
+                                    +{crecimientoMensual}
+                                </Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="pt-6 pl-0">
@@ -525,11 +516,6 @@ export default function DashboardAdmin() {
                                 </div>
                             </div>
                             
-                            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white w-full sm:w-auto">
-                                    Ver Detalles Completos
-                                </Button>
-                            </div>
                         </div>
                     </div>
                 )}

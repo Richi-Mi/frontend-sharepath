@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Pencil, 
   Lock, 
@@ -15,6 +15,17 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ItinerariosAPI } from '@/api/ItinerariosAPI';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // --- Interfaces (Sin cambios en lógica, solo visual) ---
 interface User {
@@ -34,6 +45,12 @@ export default function UsuariosPage() {
   
   // Estado visual para búsqueda (solo UI por ahora)
   const [searchTerm, setSearchTerm] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ open: false, title: "", description: "", onConfirm: () => {} });
 
   useEffect(() => {
     loadUsuarios();
@@ -96,29 +113,48 @@ export default function UsuariosPage() {
       ? '¿Estás seguro de que deseas bloquear este usuario?' 
       : '¿Estás seguro de que deseas desbloquear este usuario?';
     
-    if (!confirm(confirmMessage)) return;
-
-    try {
-      if (usuario.account_status) {
-        await ItinerariosAPI.getInstance().block(usuario.correo);
-      } else {
-        await ItinerariosAPI.getInstance().unblock(usuario.correo);
+    setConfirmDialog({
+      open: true,
+      title: usuario.account_status ? "Bloquear usuario" : "Desbloquear usuario",
+      description: confirmMessage,
+      onConfirm: async () => {
+        try {
+          if (usuario.account_status) {
+            await ItinerariosAPI.getInstance().block(usuario.correo);
+            toast.success('Usuario bloqueado correctamente');
+          } else {
+            await ItinerariosAPI.getInstance().unblock(usuario.correo);
+            toast.success('Usuario desbloqueado correctamente');
+          }
+          await loadUsuarios();
+        } catch (error) {
+          console.error('Error:', error);
+          toast.error('Error al cambiar el estado del usuario');
+        }
       }
-      await loadUsuarios();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al cambiar el estado del usuario');
-    }
+    });
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar usuario permanentemente?')) return;
-    try {
-      console.log('Eliminar:', id);
-      alert('Función de eliminación pendiente en backend');
-    } catch (error) {
-      console.error(error);
-    }
+    const usuario = usuarios.find(u => u.id === id);
+    if (!usuario) return;
+
+    setConfirmDialog({
+      open: true,
+      title: "Eliminar usuario",
+      description: '¿Estás seguro de que deseas eliminar este usuario permanentemente? Se borrarán todas sus fotos, posts, amigos y más. Esta acción no se puede deshacer.',
+      onConfirm: async () => {
+        try {
+          console.log('Intentando eliminar usuario con username:', usuario.username);
+          await ItinerariosAPI.getInstance().deleteUserByUsername(usuario.username);
+          await loadUsuarios();
+          toast.success('Usuario eliminado exitosamente');
+        } catch (error: any) {
+          console.error('Error al eliminar usuario:', error);
+          toast.error(`Error al eliminar el usuario: ${error.message || 'Error desconocido'}`);
+        }
+      }
+    });
   };
 
   // --- Helper UI: Generar iniciales para Avatar ---
@@ -130,6 +166,19 @@ export default function UsuariosPage() {
       .join('')
       .toUpperCase();
   };
+
+  // --- Filtro en tiempo real ---
+  const usuariosFiltrados = useMemo(() => {
+    if (!searchTerm.trim()) return usuarios;
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    return usuarios.filter(usuario => 
+      usuario.nombre.toLowerCase().includes(lowerSearch) ||
+      usuario.username.toLowerCase().includes(lowerSearch) ||
+      usuario.correo.toLowerCase().includes(lowerSearch) ||
+      usuario.role.toLowerCase().includes(lowerSearch)
+    );
+  }, [usuarios, searchTerm]);
 
   // --- Renderizado Condicional: Skeleton Loader ---
   if (loading) {
@@ -185,10 +234,6 @@ export default function UsuariosPage() {
               Gestiona los accesos y roles de los miembros del sistema.
             </p>
           </div>
-          <button className="inline-flex items-center justify-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-100 transition-all shadow-sm">
-            <UserPlus size={18} className="mr-2" />
-            Nuevo Usuario
-          </button>
         </div>
 
         {/* --- Controls & Filter Section (Visual UI) --- */}
@@ -211,7 +256,7 @@ export default function UsuariosPage() {
                Filtros
              </button>
              <div className="text-sm text-gray-500 font-medium px-2">
-                Total: {usuarios.length}
+                Total: {usuariosFiltrados.length}
              </div>
           </div>
         </div>
@@ -237,18 +282,24 @@ export default function UsuariosPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {usuarios.length === 0 ? (
+                {usuariosFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center text-gray-400">
                         <UserIcon size={48} className="mb-4 text-gray-200" />
-                        <p className="text-lg font-medium text-gray-900">No hay usuarios</p>
-                        <p className="text-sm">Intenta ajustar los filtros de búsqueda.</p>
+                        <p className="text-lg font-medium text-gray-900">
+                          {searchTerm.trim() ? 'Sin resultados' : 'No hay usuarios'}
+                        </p>
+                        <p className="text-sm">
+                          {searchTerm.trim() 
+                            ? 'Intenta ajustar tu búsqueda.' 
+                            : 'Intenta ajustar los filtros de búsqueda.'}
+                        </p>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  usuarios.map((usuario) => (
+                  usuariosFiltrados.map((usuario) => (
                     <tr key={usuario.id} className="group hover:bg-gray-50/80 transition-colors duration-150">
                       
                       {/* Columna Usuario: Avatar + Nombre + Email */}
@@ -301,28 +352,6 @@ export default function UsuariosPage() {
                         <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           
                           <button
-                            onClick={() => handleEdit(usuario.id)}
-                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                            title="Editar detalles"
-                          >
-                            <Pencil size={18} />
-                          </button>
-
-                          <button
-                            onClick={() => handleBlock(usuario.id)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              usuario.account_status 
-                                ? 'text-gray-400 hover:text-amber-600 hover:bg-amber-50' 
-                                : 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
-                            }`}
-                            title={usuario.account_status ? 'Bloquear acceso' : 'Desbloquear acceso'}
-                          >
-                            {usuario.account_status ? <Lock size={18} /> : <Unlock size={18} />}
-                          </button>
-
-                          <div className="h-4 w-px bg-gray-200 mx-1"></div>
-
-                          <button
                             onClick={() => handleDelete(usuario.id)}
                             className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                             title="Eliminar usuario"
@@ -341,7 +370,7 @@ export default function UsuariosPage() {
           
           {/* Footer de la tabla (Paginación visual placeholder) */}
           <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-             <span className="text-xs text-gray-500">Mostrando {usuarios.length} resultados</span>
+             <span className="text-xs text-gray-500">Mostrando {usuariosFiltrados.length} resultados</span>
              <div className="flex gap-1">
                 <button disabled className="px-3 py-1 border border-gray-300 rounded text-xs text-gray-400 bg-white cursor-not-allowed">Anterior</button>
                 <button disabled className="px-3 py-1 border border-gray-300 rounded text-xs text-gray-400 bg-white cursor-not-allowed">Siguiente</button>
@@ -349,6 +378,28 @@ export default function UsuariosPage() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                confirmDialog.onConfirm();
+                setConfirmDialog(prev => ({ ...prev, open: false }));
+              }}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

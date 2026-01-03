@@ -160,6 +160,11 @@ export interface SendFriend {
   data: Amigo;
 }
 
+export interface CancelRequest {
+  message: string;
+  data: Amigo;
+}
+
 export interface RespondFriend {
   message: string;
   data: Amigo;
@@ -316,6 +321,7 @@ export interface ApiRoutes {
 
   // Amigo
   sendFriendRequest: (receiving: string) => Promise<SendFriend>;
+  cancelFriendRequest: (receiving: string) => Promise<CancelRequest>;
   respondFriendRequest: (id: number, state: number) => Promise<RespondFriend>;
   getRequests: () => Promise<ListRequest>;
   getFriends: () => Promise<ListFriend>;
@@ -432,12 +438,6 @@ export interface UsuarioEmitente {
 }
 
 
-export interface Publicacion {
-    id:             number;
-    descripcion:    string;
-    privacity_mode: boolean;
-}
-
 export interface UsuarioEmitente {
     correo: string;
 }
@@ -451,13 +451,6 @@ export interface ShareItineraryRequest {
 export interface Foto {
   id: number;
   foto_url: string;
-}
-
-export interface Resena {
-  id?: number;
-  comentario?: string;
-  rating?: number;
-  [key: string]: any;
 }
 
 export interface Publicacion {
@@ -513,4 +506,38 @@ export interface DashboardStatsResponse {
     reportesPendientes: number;
   };
   timestamp: string;
+}
+
+
+// ==========================================
+// NUEVAS INTERFACES ADMIN (Reportes y Usuarios)
+// ==========================================
+
+export interface AdminReportPreview {
+  reporte_id: number;
+  motivo_reporte: string;
+  estatus?: string; // "Publicación eliminada previamente" si aplica
+  data: {
+    publicacion_id: number;
+    descripcion: string;
+    fotos: string[]; // Array de URLs de las fotos
+    itinerario_id: number | null;
+    itinerario_titulo: string;
+  } | null;
+}
+
+export interface DeleteUserResponse {
+  message: string;
+  deletedUser: string;
+}
+
+// Actualizamos la interfaz principal ApiRoutes con las 2 nuevas funciones
+export interface ApiRoutes {
+  // ... (Todo lo que ya tenías) ...
+
+  // [NUEVO] Vista previa de reportes (con fotos y todo junto)
+  getAdminReportsPreview: () => Promise<AdminReportPreview[]>;
+
+  // [NUEVO] Eliminar usuario por username (más fácil que por ID)
+  deleteUserByUsername: (username: string) => Promise<DeleteUserResponse>;
 }

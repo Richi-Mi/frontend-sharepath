@@ -78,8 +78,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => window.removeEventListener("storage", handleUserChange);
   }, []);
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   /*Socket cuando cambia el userID*/
   useEffect(() => {
+    audioRef.current = new Audio('/audio/nvoMsg.mp3');
     //console.log("Iniciando configuracion de SocketConext...");
 
     const token = localStorage.getItem("authToken");
@@ -119,6 +122,17 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     newSocket.on("connect", () => {
       //console.log("SocketContext: Conectado al servidor");
       setIsConnected(true);
+    });
+
+    newSocket.on("private message", (message: { content: string; from: string; to: string }) => {
+      audioRef.current?.play();
+
+      const fromSelf = message.from === userID; //Mensajes a mi mismo
+      // console.warn(fromSelf, typeof fromSelf);
+      if(!fromSelf)
+      {
+        newSocket.emit("mark messages received", { withUserID: message.from });
+      }
     });
 
     newSocket.on("disconnect", () => {
@@ -171,6 +185,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       //console.log("SocketContext: Desconectando usuario...")
       newSocket.off("connect");
       newSocket.off("session");
+      newSocket.off("private message");
       newSocket.off("disconnect"), newSocket.disconnect();
     };
   }, [userID]);

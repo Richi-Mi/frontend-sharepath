@@ -35,9 +35,15 @@ export default function UserProfilePage() {
   const [friendsCount, setFriendsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [friendsCount, setFriendsCount] = useState(0);
+  const [sendingRequest, setSendingRequest] = useState(false);
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null); // estado para toast
+  const [toastType, setToastType] = useState<"success" | "error">("success"); // tipo de toast
 
   const api = ItinerariosAPI.getInstance();
 
+  // Cargar info del usuario
   useEffect(() => {
     setLoading(true);
 
@@ -70,6 +76,47 @@ export default function UserProfilePage() {
     fetchData();
   }, [usernameParam]);
 
+  // Cargar cantidad de amigos
+  useEffect(() => {
+    const loadFriendsCount = async () => {
+      try {
+        if ("countFriends" in api && profile?.correo) {
+          const res = await (api as any).countFriends(profile.correo);
+          setFriendsCount(res.data);
+        }
+      } catch (error) {
+        console.warn("Error cargando cantidad de amigos", error);
+      }
+    };
+
+    if (profile?.correo) {
+      loadFriendsCount();
+    }
+  }, [profile]);
+
+  // Función para mostrar toast temporal
+  const showToast = (message: string, type: "success" | "error" = "success", duration = 3000) => {
+    setToastMessage(message);
+    setToastType(type);
+    setTimeout(() => setToastMessage(null), duration);
+  };
+
+  // Enviar solicitud de amistad
+  const handleAddFriend = async () => {
+    if (!profile?.correo) return;
+    setSendingRequest(true);
+
+    try {
+      await api.sendFriendRequest(profile.correo);
+      showToast("Solicitud de amistad enviada", "success");
+    } catch (error) {
+      console.error("Error enviando solicitud de amistad", error);
+      showToast("Error enviando solicitud de amistad", "error");
+    } finally {
+      setSendingRequest(false);
+    }
+  };
+
   if (loading) return <ProfileSkeleton />;
 
   if (errorMsg || !profile)
@@ -86,9 +133,21 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-muted/10 dark:bg-background pb-10">
-      {/* --- ENCABEZADO SUPERIOR (Navegación + Fondo decorativo) --- */}
+
+      
+      {/* --- Toast flotante --- */}
+      {toastMessage && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-4 py-2 rounded shadow-lg text-white ${
+            toastType === "success" ? "bg-green-500" : "bg-red-500"
+          } animate-fade-in`}
+        >
+          {toastMessage}
+        </div>
+      )}
+
+      {/* --- ENCABEZADO SUPERIOR --- */}
       <div className="relative h-48 w-full bg-gradient-to-b from-primary to-white dark:from-slate-900 dark:to-background overflow-hidden">
-        {/* Usamos la foto del usuario como textura de fondo muy sutil */}
         {profile.foto_url && (
           <Image
             src={profile.foto_url}
@@ -110,53 +169,61 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* --- BLOQUE DE IDENTIDAD (Tarjeta flotante) --- */}
+      {/* --- BLOQUE DE IDENTIDAD --- */}
       <div className="max-w-3xl mx-auto px-4 -mt-24 relative z-20">
         <Card className="flex flex-col items-center p-6 md:p-8 shadow-xl border-border/50 bg-background/95 backdrop-blur-sm rounded-3xl">
-          {/* 1. Avatar Central */}
-          <div className="-mt-20 mb-4 p-1.5 bg-background rounded-full shadow-sm ring-1 ring-border/10">
-            <Avatar className="h-32 w-32 md:h-40 md:w-40 shadow-inner">
-              <AvatarImage
-                src={profile.foto_url || undefined}
-                className="object-cover"
-              />
-              <AvatarFallback className="text-4xl bg-muted text-muted-foreground">
-                {getInitials(profile.username)}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+            
+            {/* Avatar */}
+            <div className="-mt-20 mb-4 p-1.5 bg-background rounded-full shadow-sm ring-1 ring-border/10">
+                <Avatar className="h-32 w-32 md:h-40 md:w-40 shadow-inner">
+                    <AvatarImage src={profile.foto_url || undefined} className="object-cover" />
+                    <AvatarFallback className="text-4xl bg-muted text-muted-foreground">
+                        {getInitials(profile.username)}
+                    </AvatarFallback>
+                </Avatar>
+            </div>
 
-          {/* 2. Información del Usuario (Nombre y User) */}
-          <div className="text-center space-y-1 mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-              {profile.nombre_completo}
-            </h1>
-            <p className="text-base font-medium text-muted-foreground">
-              @{profile.username}
-            </p>
-          </div>
+            {/* Nombre */}
+            <div className="text-center space-y-1 mb-6">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+                    {profile.nombre_completo}
+                </h1>
+                <p className="text-base font-medium text-muted-foreground">
+                    @{profile.username}
+                </p>
+            </div>
 
-          {/* 3. ESTADÍSTICAS (Lo que pediste mantener visible) */}
-          {/* Diseño limpio con divisores verticales */}
-          <div className="grid grid-cols-3 gap-8 md:gap-16 w-full max-w-md border-t border-b border-border/40 py-4 mb-2">
-            <StatItem
-              count={profile.publicaciones.length}
-              label="Itinerarios"
-              icon={MapIcon}
-            />
-            <StatItem count={friendsCount} label="Amigos" icon={Users} />
-            <StatItem count={0} label="Lugares" icon={MapPin} />
-          </div>
+            {/* Estadísticas */}
+            <div className="grid grid-cols-3 gap-8 md:gap-16 w-full max-w-md border-t border-b border-border/40 py-4 mb-2">
+                <StatItem 
+                    count={profile.publicaciones.length} 
+                    label="Itinerarios" 
+                    icon={MapIcon}
+                />
+                <StatItem 
+                    count={friendsCount} 
+                    label="Amigos" 
+                    icon={Users}
+                />
+                <StatItem 
+                    count={0} 
+                    label="Lugares" 
+                    icon={MapPin}
+                />
+            </div>
 
-          {/* Botón de Mensaje (Única acción solicitada) */}
-          <div className="mt-6 w-full max-w-xs">
-            <Button
-              className="w-full rounded-full font-semibold shadow-sm"
-              size="lg"
-            >
-              Mensaje
-            </Button>
-          </div>
+            {/* Botón Añadir amigo */}
+            <div className="mt-6 w-full max-w-xs">
+                <Button 
+                  className="w-full rounded-full font-semibold shadow-sm" 
+                  size="lg"
+                  onClick={handleAddFriend}
+                  disabled={sendingRequest}
+                >
+                  {sendingRequest ? "Enviando..." : "Añadir amigo"}
+                </Button>
+            </div>
+
         </Card>
       </div>
 
@@ -201,28 +268,26 @@ export default function UserProfilePage() {
                     >
                       <div className="group relative aspect-video w-full overflow-hidden rounded-xl bg-muted border border-border/50 shadow-sm hover:shadow-md transition-all">
                         {post.fotos.length > 0 ? (
-                          <>
-                            <Image
-                              src={post.fotos[0].foto_url}
-                              alt="Cover"
-                              fill
-                              className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                            {/* Overlay sutil al hover */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                          </>
+                            <>
+                                <Image
+                                    src={post.fotos[0].foto_url}
+                                    alt="Cover"
+                                    fill
+                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                            </>
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                             <MapIcon className="h-8 w-8 opacity-20" />
                           </div>
                         )}
-                      </div>
-                      {/* Título del itinerario (Si hubiera) o ID visual para referencia */}
-                      <div className="mt-2 px-1">
-                        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                          Ver detalles del viaje
-                        </p>
-                      </div>
+                        </div>
+                        <div className="mt-2 px-1">
+                            <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                                Ver detalles del viaje
+                            </p>
+                        </div>
                     </Link>
                   ))}
                 </div>
@@ -245,30 +310,19 @@ export default function UserProfilePage() {
   );
 }
 
-// --- Componentes Pequeños para mantener limpio el código ---
-
-function StatItem({
-  count,
-  label,
-  icon: Icon,
-}: {
-  count: number;
-  label: string;
-  icon: any;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-1 group cursor-default">
-      <div className="flex items-center gap-1.5 text-muted-foreground group-hover:text-primary transition-colors">
-        <Icon className="h-4 w-4" />
-        <span className="text-xs uppercase font-bold tracking-wider">
-          {label}
-        </span>
-      </div>
-      <span className="text-xl md:text-2xl font-bold text-foreground">
-        {count}
-      </span>
-    </div>
-  );
+// --- Componentes auxiliares ---
+function StatItem({ count, label, icon: Icon }: { count: number, label: string, icon: any }) {
+    return (
+        <div className="flex flex-col items-center justify-center gap-1 group cursor-default">
+            <div className="flex items-center gap-1.5 text-muted-foreground group-hover:text-primary transition-colors">
+                <Icon className="h-4 w-4" />
+                <span className="text-xs uppercase font-bold tracking-wider">{label}</span>
+            </div>
+            <span className="text-xl md:text-2xl font-bold text-foreground">
+                {count}
+            </span>
+        </div>
+    );
 }
 
 function EmptyState({ icon: Icon, text }: { icon: any; text: string }) {

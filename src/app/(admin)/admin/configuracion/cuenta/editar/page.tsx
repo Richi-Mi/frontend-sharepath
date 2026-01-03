@@ -13,7 +13,9 @@ import {
   ShieldCheck, 
   KeyRound,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { toast } from "sonner";
 import { z, ZodError } from "zod";
@@ -31,12 +33,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// Asegúrate de importar Label aquí
 import { Label } from "@/components/ui/label"; 
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 
 import { Usuario } from "@/api/interfaces/ApiRoutes";
 import { ItinerariosAPI } from "@/api/ItinerariosAPI";
+import { cn } from "@/lib/utils";
 
 function isZodError(err: unknown): err is ZodError {
   return err instanceof ZodError;
@@ -64,6 +66,11 @@ export default function EditAccountPage() {
   const [updatingPass, setUpdatingPass] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
+  // Estados Visuales
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   // --- Esquemas de Validación ---
   const profileSchema = z.object({
     nombre_completo: z.string().trim().min(1, "El nombre es requerido").regex(/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+$/, "Solo letras y espacios"),
@@ -72,7 +79,10 @@ export default function EditAccountPage() {
 
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$_?¿*]).{8,}$/;
   const verifySchema = z.string().min(1, "Ingresa tu contraseña actual");
-  const newPasswordSchema = z.string().min(8, "Mínimo 8 caracteres").regex(passwordRegex, "Debe tener mayúscula, minúscula, número y carácter especial (#, $, _, ?, ¿, *).");
+  
+  const newPasswordSchema = z.string()
+    .min(8, "Mínimo 8 caracteres")
+    .regex(passwordRegex, "Debe tener mayúscula, minúscula, número y carácter especial (#, $, _, ?, ¿, *).");
 
   type ProfileForm = z.infer<typeof profileSchema>;
 
@@ -102,7 +112,7 @@ export default function EditAccountPage() {
     loadData();
   }, []);
 
-  // --- Handlers Perfil ---
+  // --- Handlers ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -154,18 +164,31 @@ export default function EditAccountPage() {
   };
 
   const handleUpdatePassword = async () => {
+    setPasswordError(null);
     if (!verified) return toast.error("Verifica tu contraseña actual primero");
+    
     try {
       newPasswordSchema.parse(newPassword);
-      setUpdatingPass(true);
+    } catch (err: any) {
+      if (isZodError(err)) {
+        setPasswordError(err.issues[0].message);
+        return;
+      }
+      return toast.error("Error de validación");
+    }
+
+    setUpdatingPass(true);
+    try {
       await api.updatePassword({ newPassword });
       toast.success("Contraseña actualizada correctamente");
       setVerified(false);
       setCurrentPassword("");
       setNewPassword("");
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setPasswordError(null);
     } catch (err: any) {
-      if (isZodError(err)) toast.error(err.issues[0].message);
-      else toast.error(err.message || "Error al actualizar");
+      toast.error(err.message || "Error al actualizar");
     } finally {
       setUpdatingPass(false);
     }
@@ -199,14 +222,16 @@ export default function EditAccountPage() {
 
   if (loadingInitial) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
+      // Fondo oscuro en carga
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+    // Fondo principal ajustado para dark mode
+    <div className="min-h-screen bg-gray-50/50 dark:bg-zinc-950 p-6 md:p-8 transition-colors duration-300">
       <div className="max-w-3xl mx-auto space-y-6">
         
         {/* Header de Navegación */}
@@ -215,24 +240,28 @@ export default function EditAccountPage() {
             variant="ghost" 
             size="sm" 
             onClick={() => router.back()}
-            className="text-gray-500 hover:text-gray-900 -ml-2"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 -ml-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al perfil
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Configuración de Cuenta de administrador</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            Configuración de Cuenta de administrador
+          </h1>
         </div>
 
         {/* --- TARJETA 1: DATOS PÚBLICOS --- */}
-        <Card className="border-gray-200 shadow-sm overflow-hidden">
-          <CardHeader className="bg-white border-b border-gray-100 pb-4">
+        {/* Agregado dark:bg-zinc-900 y bordes oscuros */}
+        <Card className="border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+          <CardHeader className="bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 pb-4">
             <div className="flex items-center gap-2">
-               <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+               {/* Icon wrapper adaptado */}
+               <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-600 dark:text-indigo-400">
                   <User className="h-5 w-5" />
                </div>
                <div>
-                  <CardTitle className="text-lg font-bold text-gray-900">Perfil Público</CardTitle>
-                  <CardDescription>Información visible para otros usuarios.</CardDescription>
+                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">Perfil Público</CardTitle>
+                  <CardDescription className="dark:text-gray-400">Información visible para otros usuarios.</CardDescription>
                </div>
             </div>
           </CardHeader>
@@ -252,23 +281,23 @@ export default function EditAccountPage() {
                       accept="image/*"
                       className="hidden"
                       onChange={handleFileChange}
-                   />
-                   <label htmlFor="foto-input" className="cursor-pointer block relative">
-                      <Avatar className="h-32 w-32 border-4 border-white shadow-md ring-1 ring-gray-200">
+                    />
+                    <label htmlFor="foto-input" className="cursor-pointer block relative">
+                      <Avatar className="h-32 w-32 border-4 border-white dark:border-zinc-800 shadow-md ring-1 ring-gray-200 dark:ring-zinc-700">
                         <AvatarImage src={preview || ""} className="object-cover" />
-                        <AvatarFallback className="text-2xl bg-gray-100 text-gray-500 font-bold">
+                        <AvatarFallback className="text-2xl bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 font-bold">
                            {user?.username?.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full border shadow-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                      <div className="absolute bottom-0 right-0 bg-white dark:bg-zinc-800 p-1.5 rounded-full border dark:border-zinc-700 shadow-sm text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                         <Camera className="h-4 w-4" />
                       </div>
-                   </label>
+                    </label>
                 </div>
-                <p className="text-xs text-gray-500 font-medium">Click para cambiar</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Click para cambiar</p>
               </div>
 
-              {/* Formulario Datos (Dentro de Form context -> usa FormLabel) */}
+              {/* Formulario Datos */}
               <div className="flex-1 w-full">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleSaveProfile)} className="space-y-4">
@@ -278,9 +307,14 @@ export default function EditAccountPage() {
                         name="nombre_completo"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-gray-700">Nombre Completo</FormLabel>
+                            <FormLabel className="text-gray-700 dark:text-gray-300">Nombre Completo</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: Juan Pérez" {...field} className="bg-gray-50/50" />
+                              {/* Inputs adaptados */}
+                              <Input 
+                                placeholder="Ej: Juan Pérez" 
+                                {...field} 
+                                className="bg-gray-50/50 dark:bg-zinc-950/50 border-gray-200 dark:border-zinc-800 dark:text-white" 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -291,11 +325,15 @@ export default function EditAccountPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-gray-700">Nombre de Usuario</FormLabel>
+                            <FormLabel className="text-gray-700 dark:text-gray-300">Nombre de Usuario</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-gray-400">@</span>
-                                <Input placeholder="juanperez" {...field} className="pl-7 bg-gray-50/50" />
+                                <Input 
+                                  placeholder="juanperez" 
+                                  {...field} 
+                                  className="pl-7 bg-gray-50/50 dark:bg-zinc-950/50 border-gray-200 dark:border-zinc-800 dark:text-white" 
+                                />
                               </div>
                             </FormControl>
                             <FormMessage />
@@ -305,23 +343,22 @@ export default function EditAccountPage() {
                     </div>
 
                     <div className="space-y-2 pt-2">
-                       {/* Aquí usas Label normal porque no es un FormField de react-hook-form directo */}
-                       <Label className="text-gray-700">Visibilidad del Perfil</Label>
+                       <Label className="text-gray-700 dark:text-gray-300">Visibilidad del Perfil</Label>
                        <Select value={privacidad} onValueChange={setPrivacidad}>
-                        <SelectTrigger className="w-full bg-gray-50/50">
+                        <SelectTrigger className="w-full bg-gray-50/50 dark:bg-zinc-950/50 border-gray-200 dark:border-zinc-800 dark:text-white">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="publica">
+                        <SelectContent className="dark:bg-zinc-900 dark:border-zinc-800">
+                          <SelectItem value="publica" className="dark:focus:bg-zinc-800">
                             <div className="flex items-center gap-2">
                               <Globe className="h-4 w-4 text-blue-500" />
-                              <span>Pública <span className="text-gray-400 text-xs ml-1">(Visible para todos)</span></span>
+                              <span className="dark:text-white">Pública <span className="text-gray-400 text-xs ml-1">(Visible para todos)</span></span>
                             </div>
                           </SelectItem>
-                          <SelectItem value="privada">
+                          <SelectItem value="privada" className="dark:focus:bg-zinc-800">
                             <div className="flex items-center gap-2">
                               <Lock className="h-4 w-4 text-amber-500" />
-                              <span>Privada <span className="text-gray-400 text-xs ml-1">(Solo amigos)</span></span>
+                              <span className="dark:text-white">Privada <span className="text-gray-400 text-xs ml-1">(Solo amigos)</span></span>
                             </div>
                           </SelectItem>
                         </SelectContent>
@@ -341,16 +378,16 @@ export default function EditAccountPage() {
           </CardContent>
         </Card>
 
-        {/* --- TARJETA 2: SEGURIDAD (Sin Form context -> usa Label) --- */}
-        <Card className="border-gray-200 shadow-sm overflow-hidden">
-          <CardHeader className="bg-white border-b border-gray-100 pb-4">
+        {/* --- TARJETA 2: SEGURIDAD --- */}
+        <Card className="border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+          <CardHeader className="bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 pb-4">
              <div className="flex items-center gap-2">
-               <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+               <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-emerald-600 dark:text-emerald-400">
                   <ShieldCheck className="h-5 w-5" />
                </div>
                <div>
-                  <CardTitle className="text-lg font-bold text-gray-900">Seguridad</CardTitle>
-                  <CardDescription>Gestiona tu contraseña y acceso.</CardDescription>
+                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">Seguridad</CardTitle>
+                  <CardDescription className="dark:text-gray-400">Gestiona tu contraseña y acceso.</CardDescription>
                </div>
             </div>
           </CardHeader>
@@ -358,22 +395,41 @@ export default function EditAccountPage() {
           <CardContent className="p-6 space-y-6">
              <div className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                   <Label className="text-gray-700">Contraseña Actual</Label> {/* CORREGIDO: Label en vez de FormLabel */}
+                   <Label className="text-gray-700 dark:text-gray-300">Contraseña Actual</Label>
                    <div className="flex gap-2">
-                      <Input 
-                        type="password" 
-                        placeholder="••••••••" 
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="bg-gray-50/50"
-                        disabled={verified}
-                      />
+                      <div className="relative flex-1">
+                         <Input 
+                           type={showCurrentPassword ? "text" : "password"}
+                           placeholder="••••••••" 
+                           value={currentPassword}
+                           onChange={(e) => setCurrentPassword(e.target.value)}
+                           // Estilos dark mode para input
+                           className="bg-gray-50/50 dark:bg-zinc-950/50 border-gray-200 dark:border-zinc-800 dark:text-white pr-10" 
+                           disabled={verified}
+                         />
+                         {!verified && (
+                             <Button
+                               type="button"
+                               variant="ghost"
+                               size="sm"
+                               className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                             >
+                               {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                             </Button>
+                         )}
+                      </div>
                       <Button 
                          type="button" 
                          variant={verified ? "outline" : "secondary"}
                          onClick={handleVerifyCurrent}
                          disabled={verifying || verified || !currentPassword}
-                         className={verified ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : ""}
+                         // Ajustes para el botón de verificar
+                         className={cn(
+                           verified 
+                             ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-400" 
+                             : "dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
+                         )}
                       >
                          {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : verified ? <CheckCircle2 className="h-4 w-4 mr-2" /> : null}
                          {verified ? "Verificada" : "Verificar"}
@@ -382,21 +438,46 @@ export default function EditAccountPage() {
                 </div>
 
                 {verified && (
-                   <div className="animate-in fade-in slide-in-from-top-2 duration-300 pt-2 space-y-4 border-t border-gray-100 mt-4">
+                   <div className="animate-in fade-in slide-in-from-top-2 duration-300 pt-2 space-y-4 border-t border-gray-100 dark:border-zinc-800 mt-4">
                       <div className="space-y-2">
-                        <Label className="text-gray-700">Nueva Contraseña</Label> {/* CORREGIDO: Label en vez de FormLabel */}
-                        <Input 
-                            type="password" 
-                            placeholder="Mínimo 8 caracteres, mayúscula, símbolo..." 
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="bg-gray-50/50"
-                        />
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                           <KeyRound className="h-3 w-3" />
-                           Debe incluir mayúscula, número y símbolo (#, $, _, ?, ¿, *)
-                        </p>
+                        <Label className="text-gray-700 dark:text-gray-300">Nueva Contraseña</Label>
+                        <div className="relative">
+                            <Input 
+                                type={showNewPassword ? "text" : "password"}
+                                placeholder="Mínimo 8 caracteres, mayúscula, símbolo..." 
+                                value={newPassword}
+                                onChange={(e) => {
+                                    setNewPassword(e.target.value);
+                                    if(passwordError) setPasswordError(null);
+                                }}
+                                className={cn(
+                                    "bg-gray-50/50 dark:bg-zinc-950/50 border-gray-200 dark:border-zinc-800 dark:text-white pr-10",
+                                    passwordError && "border-red-500 focus-visible:ring-red-500"
+                                )}
+                            />
+                            <Button
+                               type="button"
+                               variant="ghost"
+                               size="sm"
+                               className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                               onClick={() => setShowNewPassword(!showNewPassword)}
+                            >
+                               {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                        
+                        {passwordError ? (
+                            <p className="text-sm font-medium text-red-500 animate-in slide-in-from-top-1">
+                                {passwordError}
+                            </p>
+                        ) : (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                               <KeyRound className="h-3 w-3" />
+                               Debe incluir mayúscula, número y símbolo (#, $, _, ?, ¿, *)
+                            </p>
+                        )}
                       </div>
+                      
                       <div className="flex justify-end">
                          <Button onClick={handleUpdatePassword} disabled={updatingPass || !newPassword} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                             {updatingPass && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
@@ -410,10 +491,11 @@ export default function EditAccountPage() {
         </Card>
 
         {/* --- ZONA DE PELIGRO --- */}
-        <div className="border border-red-100 rounded-xl bg-red-50/30 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Fondo rojo suave que se adapta al modo oscuro */}
+        <div className="border border-red-100 dark:border-red-900/50 rounded-xl bg-red-50/30 dark:bg-red-900/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
            <div>
-              <h3 className="text-base font-bold text-red-700">Zona de Peligro</h3>
-              <p className="text-sm text-red-600/80 mt-1">
+              <h3 className="text-base font-bold text-red-700 dark:text-red-400">Zona de Peligro</h3>
+              <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-1">
                  Eliminar tu cuenta es una acción permanente y no se puede deshacer.
               </p>
            </div>
@@ -421,7 +503,7 @@ export default function EditAccountPage() {
               variant="destructive" 
               onClick={handleDeleteClick}
               disabled={loadingDelete}
-              className="bg-white border-2 border-red-100 text-red-600 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm whitespace-nowrap"
+              className="bg-white dark:bg-red-950/30 border-2 border-red-100 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-sm whitespace-nowrap"
            >
               {loadingDelete ? "Procesando..." : (
                 <>

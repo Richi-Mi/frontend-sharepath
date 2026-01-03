@@ -18,7 +18,7 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-2">
 
           {/* <ThemeSelector /> */}
-          <NotificationBell></NotificationBell>
+          <NotificationBell type="admin" />
           <ModeSwitcher />
           <AccountSwitcher type="admin"/>
         </div>

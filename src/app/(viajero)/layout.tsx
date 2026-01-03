@@ -92,7 +92,7 @@ export default async function Layout({
             <div className="flex items-center gap-2">
               <LayoutControls {...layoutPreferences} /> 
               <ThemeSwitcher />
-              <NotificationBell />
+              <NotificationBell type="viajero" />
               <AccountSwitcher type="viajero"/>
             </div>
           </div>

@@ -45,7 +45,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// ✅ Reutiliza componentes de "crear"
+// Reutiliza componentes de "crear"
 import { ItineraryHeader } from "../../crear/components/ItineraryHeader";
 import { DaySelector } from "../../crear/components/DaySelector";
 import { ActivityListPanel } from "../../crear/components/ActivityListPanel";
@@ -103,7 +103,7 @@ export default function EditarItinerarioPage() {
   const router = useRouter();
   const params = useParams<{ itineraryId: string }>();
 
-  // ✅ OJO: tu folder se llama [itineraryId], así que el param es itineraryId
+  //tu folder se llama [itineraryId], así que el param es itineraryId
   const itineraryId = params?.itineraryId ? String(params.itineraryId) : "";
 
   // --- STORE ---
@@ -143,7 +143,7 @@ export default function EditarItinerarioPage() {
     try {
       const api = ItinerariosAPI.getInstance();
 
-      // ⚠️ ajusta el nombre del método si en tu API se llama distinto
+      //ajusta el nombre del método si en tu API se llama distinto
       await api.deleteItinerario(itineraryId);
 
       toast.success("Itinerario eliminado");
@@ -499,32 +499,37 @@ export default function EditarItinerarioPage() {
   }, [days, actividades, setActivities]);
 
   const executeSave = async () => {
-    if (!meta || !itineraryId) return;
-    setSaveAlertOpen(false);
-    setSaving(true);
+  if (!meta || !itineraryId) return;
+  setSaveAlertOpen(false);
+  setSaving(true);
 
-    try {
-      const payload = buildItineraryPayload(meta, actividades);
-      console.log("Enviando payload para actualizar itinerario:", payload);
-      await ItinerariosAPI.getInstance().updateItinerario(itineraryId, payload);
-      toast.success("¡Itinerario actualizado!", {
-        description: "Tus cambios se guardaron correctamente.",
-        duration: 2500,
-      });
+  try {
+    const payload = buildItineraryPayload(meta, actividades);
+    await ItinerariosAPI.getInstance().updateItinerario(itineraryId, payload);
 
-      // Actualiza snapshot (para que “Descartar cambios” regrese a lo guardado)
-      originalSnapshotRef.current = {
-        meta,
-        actividades,
-      };
-    } catch (error: any) {
-      toast.error("No se pudo guardar", {
-        description: error?.message || "Error de conexión con el servidor.",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+    toast.success("¡Itinerario actualizado!", {
+      description: "Tus cambios se guardaron correctamente.",
+      duration: 2500,
+    });
+
+    // Actualiza snapshot
+    originalSnapshotRef.current = {
+      meta,
+      actividades,
+    };
+
+    //  REDIRECCIÓN A "MIS ITINERARIOS"
+    router.push("/viajero/itinerarios");
+
+  } catch (error: any) {
+    toast.error("No se pudo guardar", {
+      description: error?.message || "Error de conexión con el servidor.",
+    });
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   // Drag & Drop
   const handleDragEnd = (event: any) => {

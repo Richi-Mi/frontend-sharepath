@@ -55,7 +55,7 @@ export const Navbar = () => {
         "top-5 lg:top-12"
       )}
     >
-      <div className="flex items-center justify-between px-6 py-3">
+      <div className="flex items-center justify-center gap-10 px-0 py-3">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src="/sharepath.svg"
@@ -68,7 +68,7 @@ export const Navbar = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <NavigationMenu className="max-lg:hidden">
+        {/* <NavigationMenu className="max-lg:hidden">
           <NavigationMenuList>
             {ITEMS.map((link) =>
               link.dropdownItems ? (
@@ -115,7 +115,7 @@ export const Navbar = () => {
               )
             )}
           </NavigationMenuList>
-        </NavigationMenu>
+        </NavigationMenu> */}
 
         {/* Auth Buttons */}
         <div className="flex items-center gap-2.5">

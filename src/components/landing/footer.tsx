@@ -37,7 +37,7 @@ export function Footer() {
         </div>
       </div>
 
-      <nav className="container flex flex-col items-center gap-4">
+      {/* <nav className="container flex flex-col items-center gap-4">
         <ul className="flex flex-wrap items-center justify-center gap-6">
           {navigation.map((item) => (
             <li key={item.name}>
@@ -72,7 +72,7 @@ export function Footer() {
             </li>
           ))}
         </ul>
-      </nav>
+      </nav> */}
 
       <div className="text-primary mt-10 w-full md:mt-14 lg:mt-20">
         <svg

@@ -551,7 +551,7 @@ function FriendSuggestionCard({ suggestion, onConnect, isPending }: any) {
                 setLoading(false);
             }}
         >
-          {loading ? <Loader2 className="h-3 w-3 animate-spin"/> : isPending ? "Enviada" : <><UserPlus className="mr-2 h-3.5 w-3.5" />Conectar</>}
+          {loading ? <Loader2 className="h-3 w-3 animate-spin"/> : isPending ? "Enviada" : <><UserPlus className="mr-2 h-3.5 w-3.5" />Agregar</>}
         </Button>
       </div>
     </Card>

@@ -36,6 +36,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -54,6 +64,14 @@ import {
 import { ItinerariosAPI } from "@/api/ItinerariosAPI";
 import { Reporte, Publicacion } from "@/api/interfaces/ApiRoutes";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 // --- TIPOS ---
 type ReportStatus = "en_revision" | "pendiente" | "resuelto";
@@ -75,7 +93,7 @@ type ReportItemUI = {
 // --- COMPONENTES AUXILIARES ---
 
 // 1. Badge de Estado Consistente
-const StatusBadge = ({ status }: { status: ReportStatus }) => {
+const StatusBadge = ({ status, onClick }: { status: ReportStatus; onClick?: () => void }) => {
   const config = {
     pendiente: {
         label: "Pendiente",
@@ -95,11 +113,22 @@ const StatusBadge = ({ status }: { status: ReportStatus }) => {
   };
   const { label, icon: Icon, className } = config[status] || config.pendiente;
 
+  const clickable = Boolean(onClick);
+
   return (
-    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border gap-1.5", className)}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border gap-1.5",
+        clickable && "transition-colors hover:opacity-90 cursor-pointer",
+        className
+      )}
+      title={clickable ? "Cambiar estado" : undefined}
+    >
       <Icon className="h-3 w-3" />
       {label}
-    </span>
+    </button>
   );
 };
 
@@ -130,33 +159,117 @@ export default function ReportesPage() {
   const [publicacionLoading, setPublicacionLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ open: false, title: "", description: "", onConfirm: () => {} });
 
   const [queryText, setQueryText] = useState("");
   const [queryStatus, setQueryStatus] = useState<ReportStatus | "all">("all");
 
   const api = useMemo(() => ItinerariosAPI.getInstance(), []);
 
+  // Persistencia local de estados de reportes
+  const STORAGE_KEY = "adminReportStatuses";
+  const loadPersistedStatuses = (): Record<string, ReportStatus> => {
+    if (typeof window === "undefined") return {} as any;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Record<string, ReportStatus>) : {};
+    } catch {
+      return {} as any;
+    }
+  };
+  const saveStatus = (id: number, status: ReportStatus) => {
+    try {
+      const map = loadPersistedStatuses();
+      map[String(id)] = status;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    } catch {}
+  };
+  const removeStatus = (id: number) => {
+    try {
+      const map = loadPersistedStatuses();
+      delete map[String(id)];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    } catch {}
+  };
+
   // Carga de datos
   const loadReports = async () => {
     try {
       setLoading(true);
-      const reportesDelBackend = await api.getReports();
+      const reportesDelBackend = await api.getAdminReportsPreview();
+      console.log("Reportes recibidos:", reportesDelBackend);
       
       if (reportesDelBackend.length > 0) {
-        const mappedReports: ReportItemUI[] = reportesDelBackend.map((reporte) => ({
-          id: reporte.id,
-          description: reporte.description,
-          usuario_emitente: {
-            username: reporte.usuario_emitente?.username || "Anónimo",
-            nombre_completo: reporte.usuario_emitente?.nombre_completo || "Usuario Desconocido",
-            role: reporte.usuario_emitente?.role || "viajero",
-            foto_url: reporte.usuario_emitente?.foto_url,
-          },
-          date: new Date().toISOString(), 
-          status: "pendiente",
-          originalReport: reporte
-        }));
-        setReports(mappedReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        const mappedReports: ReportItemUI[] = reportesDelBackend.map((reporte: any) => {
+          const reportId = reporte.reporte_id || reporte.id || Math.random();
+          return {
+            id: reportId,
+            description: reporte.motivo_reporte || reporte.description || "",
+            usuario_emitente: {
+              username: "?",
+              nombre_completo: "Cargando...",
+              role: "",
+              foto_url: undefined,
+            },
+            date: new Date().toISOString(),
+            status: "pendiente" as ReportStatus,
+            originalReport: {
+              id: reportId,
+              description: reporte.motivo_reporte || reporte.description || "",
+              usuario_emitente: {
+                username: "",
+                nombre_completo: "",
+                role: "",
+                foto_url: undefined,
+              },
+              historial: [],
+              fotos: (reporte.data?.fotos || []).map((url: string, i: number) => ({ id: i, foto_url: url })),
+              publicacion_data: reporte.data,
+            } as any,
+          };
+        });
+
+        // Enriquecer con detalles reales del reportante
+        const enrichedReports = await Promise.all(
+          mappedReports.map(async (r) => {
+            try {
+              const detail = await api.getAdminReportDetail(r.id);
+              const u = detail.usuario_emitente || ({} as any);
+              
+              return {
+                ...r,
+                description: detail.description || r.description,
+                usuario_emitente: {
+                  username: u.username || r.usuario_emitente.username || "usuario",
+                  nombre_completo: u.nombre_completo || u.username || r.usuario_emitente.nombre_completo || "Usuario",
+                  role: u.role || "usuario",
+                  foto_url: u.foto_url,
+                },
+                originalReport: detail as any,
+              } as ReportItemUI;
+            } catch (e) {
+              return r;
+            }
+          })
+        );
+
+        // Aplicar estados persistidos si existen
+        const persisted = loadPersistedStatuses();
+        const withPersisted = enrichedReports.map(r => {
+          const s = persisted[String(r.id)] as ReportStatus | undefined;
+          return s ? { ...r, status: s } : r;
+        });
+
+        setReports(
+          withPersisted.sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          )
+        );
       } else {
         setReports([]);
       }
@@ -173,6 +286,7 @@ export default function ReportesPage() {
   const filteredReports = useMemo(() => {
     const lowerQuery = queryText.toLowerCase();
     return reports.filter((r) => {
+      if (!r.id) return false;
       const matchText = 
         r.id.toString().includes(lowerQuery) ||
         r.usuario_emitente.nombre_completo.toLowerCase().includes(lowerQuery) ||
@@ -196,6 +310,14 @@ export default function ReportesPage() {
   const handleViewDetails = async (id: number) => {
     setModalOpen(true);
     setDetailLoading(true);
+    // Al abrir detalles, marcar como "en revisión" si estaba pendiente
+    setReports(prev => prev.map(r => {
+      if (r.id === id && r.status === "pendiente") {
+        saveStatus(id, "en_revision");
+        return { ...r, status: "en_revision" };
+      }
+      return r;
+    }));
     try {
       const detail = await api.getAdminReportDetail(id);
       setSelectedReport(detail);
@@ -207,26 +329,53 @@ export default function ReportesPage() {
     }
   };
 
+  const handleToggleStatus = (id: number) => {
+    const current = reports.find(r => r.id === id)?.status;
+    const next: ReportStatus = current === "pendiente" ? "en_revision" : current === "en_revision" ? "pendiente" : (current || "pendiente");
+    saveStatus(id, next);
+    setReports(prev => prev.map(r => {
+      if (r.id !== id) return r;
+      return { ...r, status: next };
+    }));
+  };
+
   const handleBanPublication = async (id: number) => {
-    if(!confirm("¿Estás seguro de banear la publicación asociada?")) return;
-    try {
-      await api.banPublication(id);
-      setReports(prev => prev.map(r => r.id === id ? { ...r, status: "en_revision" } : r));
-      setModalOpen(false);
-    } catch (error) {
-        alert("Error al banear");
-    }
+    setConfirmDialog({
+      open: true,
+      title: "Banear publicación",
+      description: "¿Estás seguro de banear la publicación asociada? Esta acción marcará el reporte como en revisión.",
+      onConfirm: async () => {
+        try {
+          await api.banPublication(id);
+          setReports(prev => prev.map(r => r.id === id ? { ...r, status: "en_revision" } : r));
+          saveStatus(id, "en_revision");
+          setModalOpen(false);
+          toast.success("Publicación baneada correctamente");
+        } catch (error) {
+          toast.error("Error al banear la publicación");
+        }
+      }
+    });
   };
 
   const handleDeleteReport = async (id: number) => {
-    if (!confirm("¿Eliminar este reporte permanentemente?")) return;
-    try {
-      await api.deleteReport(id);
-      setReports(prev => prev.filter(r => r.id !== id));
-      setModalOpen(false);
-    } catch (error) {
-      alert("Error al eliminar");
-    }
+    setConfirmDialog({
+      open: true,
+      title: "Eliminar reporte",
+      description: "¿Eliminar este reporte permanentemente? Esta acción no se puede deshacer.",
+      onConfirm: async () => {
+        try {
+          await api.deleteReport(id);
+          setReports(prev => prev.filter(r => r.id !== id));
+          removeStatus(id);
+          setModalOpen(false);
+          toast.success("Reporte eliminado correctamente");
+        } catch (error: any) {
+          console.error("Error al eliminar reporte:", error);
+          toast.error(`Error al eliminar el reporte: ${error?.message || 'Error desconocido'}`);
+        }
+      }
+    });
   };
 
   const extractPublicacionId = (reporte: Reporte): number | null => {
@@ -242,7 +391,7 @@ export default function ReportesPage() {
     if (!selectedReport) return;
     const pubId = extractPublicacionId(selectedReport);
     if (!pubId) {
-      alert("No se pudo identificar el ID de la publicación.");
+      toast.error("No se pudo identificar el ID de la publicación.");
       return;
     }
     setPreviewOpen(true);
@@ -252,6 +401,7 @@ export default function ReportesPage() {
       setSelectedPublicacion(pub);
     } catch (error) {
       setSelectedPublicacion(null);
+      toast.error("Error al cargar la publicación");
     } finally {
       setPublicacionLoading(false);
     }
@@ -341,7 +491,6 @@ export default function ReportesPage() {
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Usuario Reportante</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Motivo</th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
                             <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
@@ -349,7 +498,7 @@ export default function ReportesPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center">
+                                <td colSpan={5} className="px-6 py-12 text-center">
                                     <div className="flex flex-col items-center justify-center">
                                         <Loader2 className="h-8 w-8 text-indigo-500 animate-spin mb-2" />
                                         <p className="text-sm text-gray-500">Cargando reportes...</p>
@@ -358,7 +507,7 @@ export default function ReportesPage() {
                             </tr>
                         ) : filteredReports.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center">
+                                <td colSpan={5} className="px-6 py-12 text-center">
                                     <div className="flex flex-col items-center justify-center">
                                         <div className="bg-gray-100 p-3 rounded-full mb-3">
                                             <Flag className="h-6 w-6 text-gray-400" />
@@ -379,12 +528,12 @@ export default function ReportesPage() {
                                             <Avatar className="h-8 w-8 border border-gray-200">
                                                 <AvatarImage src={report.usuario_emitente.foto_url} />
                                                 <AvatarFallback className="bg-indigo-50 text-indigo-700 text-xs font-bold">
-                                                    {report.usuario_emitente.username.slice(0, 2).toUpperCase()}
+                                                  {(report.usuario_emitente.username || "US").slice(0, 2).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="ml-3">
-                                                <div className="text-sm font-medium text-gray-900">{report.usuario_emitente.nombre_completo}</div>
-                                                <div className="text-xs text-gray-500 capitalize">{report.usuario_emitente.role}</div>
+                                                <div className="text-sm font-medium text-gray-900">{report.usuario_emitente.nombre_completo || report.usuario_emitente.username}</div>
+                                                <div className="text-xs text-gray-500 capitalize">{report.usuario_emitente.role || "Usuario"}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -403,13 +552,7 @@ export default function ReportesPage() {
                                         </TooltipProvider>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm text-gray-900">{format(new Date(report.date), "dd MMM yyyy", { locale: es })}</span>
-                                            <span className="text-xs text-gray-500">{formatDistanceToNow(new Date(report.date), { addSuffix: true, locale: es })}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge status={report.status} />
+                                      <StatusBadge status={report.status} onClick={() => handleToggleStatus(report.id)} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex items-center justify-end gap-2">
@@ -479,7 +622,7 @@ export default function ReportesPage() {
                 <div>
                     <DialogTitle className="text-xl font-bold text-gray-900">Detalles del Reporte</DialogTitle>
                     <DialogDescription className="text-gray-500 mt-1">
-                        ID: #{selectedReport?.id} • {selectedReport ? format(new Date(), "dd MMMM yyyy", { locale: es }) : "..."}
+                        ID: #{selectedReport?.id}
                     </DialogDescription>
                 </div>
             </div>
@@ -561,7 +704,7 @@ export default function ReportesPage() {
 
       {/* 2. Modal Preview (Estilo Red Social) */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl border-0 shadow-2xl bg-white">
+        <DialogContent className="max-w-6xl p-0 overflow-hidden rounded-2xl border-0 shadow-2xl bg-white">
             {publicacionLoading ? (
                 <div className="py-20 flex flex-col items-center">
                     <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
@@ -569,48 +712,80 @@ export default function ReportesPage() {
                 </div>
             ) : selectedPublicacion ? (
                 <div>
-                    <div className="p-4 flex items-center justify-between border-b border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-                                <FileText className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-gray-900">Publicación #{selectedPublicacion.id}</h3>
-                                <p className="text-xs text-gray-500">Vista de moderación</p>
-                            </div>
+                    <div className="p-4 flex items-center gap-3 border-b border-gray-100">
+                        <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+                            <FileText className="h-5 w-5" />
                         </div>
-                        <button onClick={() => setPreviewOpen(false)} className="text-gray-400 hover:text-gray-600">
-                            <XCircle className="h-6 w-6" />
-                        </button>
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-900">Publicación #{selectedPublicacion.id}</h3>
+                            <p className="text-xs text-gray-500">Vista de moderación</p>
+                        </div>
                     </div>
-
-                    <div className="bg-gray-900 aspect-square flex items-center justify-center relative">
+                    <div className="grid grid-cols-1 md:grid-cols-2">
+                      {/* Left: Carousel */}
+                      <div className="bg-black/95 relative">
                         {selectedPublicacion.fotos && selectedPublicacion.fotos.length > 0 ? (
-                            <img 
-                                src={selectedPublicacion.fotos[0].foto_url} 
-                                className="w-full h-full object-contain" 
-                                alt="Evidencia"
-                            />
+                          <div className="p-4">
+                            <Carousel
+                              opts={{ align: "start", loop: true }}
+                              className="w-full"
+                            >
+                              <CarouselContent>
+                                {selectedPublicacion.fotos.map((f: any, idx: number) => (
+                                  <CarouselItem key={idx}>
+                                    <div className="aspect-square w-full flex items-center justify-center bg-black/90 rounded-lg overflow-hidden">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={f.foto_url}
+                                        alt={`Imagen ${idx + 1}`}
+                                        className="max-h-full max-w-full object-contain"
+                                      />
+                                    </div>
+                                  </CarouselItem>
+                                ))}
+                              </CarouselContent>
+                              <CarouselPrevious className="bg-white/80 hover:bg-white shadow-md -left-3" />
+                              <CarouselNext className="bg-white/80 hover:bg-white shadow-md -right-3" />
+                            </Carousel>
+                          </div>
                         ) : (
+                          <div className="aspect-square w-full flex items-center justify-center text-gray-400">
                             <div className="text-gray-500 flex flex-col items-center">
-                                <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
-                                <span className="text-sm">Sin imagen</span>
+                              <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+                              <span className="text-sm">Sin imágenes</span>
                             </div>
+                          </div>
                         )}
-                    </div>
+                      </div>
 
-                    <div className="p-6">
-                        <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Descripción</h4>
-                        <p className="text-sm text-gray-800 leading-relaxed">
-                            {selectedPublicacion.descripcion || <span className="italic text-gray-400">Sin descripción</span>}
-                        </p>
-                        
+                      {/* Right: Details */}
+                      <div className="p-6 space-y-4">
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">
+                            {selectedPublicacion.titulo || selectedPublicacion.title || `Publicación #${selectedPublicacion.id}`}
+                          </h2>
+                          <p className="text-xs text-gray-500 mt-0.5">Detalles del contenido reportado</p>
+                        </div>
+
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Descripción</h4>
+                          <p className="text-sm text-gray-800 leading-relaxed">
+                            {selectedPublicacion.descripcion || selectedPublicacion.description || <span className="italic text-gray-400">Sin descripción</span>}
+                          </p>
+                        </div>
+
                         {selectedPublicacion.itinerario && (
-                            <div className="mt-4 flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
-                                <MapPin className="h-3.5 w-3.5" />
-                                <span className="truncate">Vinculado a: {(selectedPublicacion.itinerario as any).title || selectedPublicacion.itinerario.id}</span>
+                          <div>
+                            <h4 className="text-xs font-bold text-gray-400 uppercase mb-2">Itinerario vinculado</h4>
+                            <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium border border-blue-100">
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span className="truncate">
+                                {(selectedPublicacion.itinerario as any).title || (selectedPublicacion.itinerario as any).nombre || selectedPublicacion.itinerario.id}
+                              </span>
                             </div>
+                          </div>
                         )}
+                      </div>
                     </div>
                 </div>
             ) : (
@@ -622,6 +797,28 @@ export default function ReportesPage() {
             )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                confirmDialog.onConfirm();
+                setConfirmDialog(prev => ({ ...prev, open: false }));
+              }}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

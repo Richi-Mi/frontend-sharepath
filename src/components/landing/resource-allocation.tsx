@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 
 const topItems = [
   {
-    title: "Plantillas rápidas de itinerario.",
+    title: "Optimiza tu ruta y completa tus días al instante.",
     description:
-      "Crea días completos con horarios, bloques y actividades listas para ajustar a tu forma de viajar.",
+      "Deja que SharePath ordene tus lugares para reducir traslados y aprovechar mejor tu tiempo. Si te faltan actividades, te recomienda lugares cercanos según tus preferencias y categorías para cerrar tu día completo.",
     images: [
       {
-        src: "/test2.webp",
+        src: "/foto4.png",
         alt: "Interfaz de plantillas de itinerario",
         width: 495,
         height: 186,
@@ -65,12 +65,12 @@ const topItems = [
 
 const bottomItems = [
   {
-    title: "Archiva lo que no va.",
+    title: "Tu red de viajeros, en un solo lugar.",
     description:
-      "Marca y guarda aquellas ideas, lugares o rutas que no usarás en este viaje, pero que quieres considerar más adelante.",
+      "Agrega amigos, comparte tu perfil, visualiza tu red y mantente en contacto con chat en tiempo real. Planeen juntos y decidan rutas sin salir de SharePath.",
     images: [
       {
-        src: "/test.webp",
+        src: "/foto5.png",
         alt: "Interfaz de archivo de rutas",
         width: 305,
         height: 280,
@@ -81,12 +81,12 @@ const bottomItems = [
     fade: ["bottom"],
   },
   {
-    title: "Notas y comentarios.",
+    title: "Publica tus itinerarios como experiencias",
     description:
-      "Agrega comentarios sobre cada día o lugar: recomendaciones, horarios especiales o detalles que no quieres olvidar.",
+      "Convierte cualquier itinerario en una publicación: incluye mapa, ruta, días y lugares destacados. Tus amigos pueden verlo, guardarlo e inspirarse para su propio viaje.",
     images: [
       {
-        src: "/test.webp",
+        src: "/foto6.png",
         alt: "Interfaz de notas del itinerario",
         width: 320,
         height: 103,
@@ -97,12 +97,12 @@ const bottomItems = [
     fade: [""],
   },
   {
-    title: "Recordatorios inteligentes.",
+    title: "Explora itinerarios",
     description:
-      "Recibe avisos sobre traslados largos, actividades muy cargadas en un mismo día o cambios que puedan mejorar tu ruta.",
+      "Descubre rutas creadas por otros viajeros: filtra por estado, categorías, duración o calificación. Abre el itinerario, revisa el mapa y úsalo como base para crear el tuyo.",
     images: [
       {
-        src: "/test.webp",
+        src: "/foto7.png",
         alt: "Interfaz de notificaciones",
         width: 305,
         height: 280,

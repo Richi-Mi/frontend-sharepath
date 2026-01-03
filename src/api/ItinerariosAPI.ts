@@ -19,6 +19,8 @@ import {
   VerifyPasswordRequest,
   SearchUserResponse,
   SendFriend,
+  CountFriendsResponse, 
+  CancelRequest,
   RespondFriend,
   ListRequest,
   ListFriend,
@@ -43,7 +45,9 @@ import {
   ItinerarioData,
   DashboardStatsResponse,
   UserInfoResponse,
-  UpdatePublicationRequest,
+  AdminReportPreview, 
+  DeleteUserResponse,  
+  UpdatePublicationRequest
 } from "./interfaces/ApiRoutes";
 
 export class ItinerariosAPI implements ApiRoutes {
@@ -213,6 +217,7 @@ export class ItinerariosAPI implements ApiRoutes {
 
   private async delete<T>(route: string): Promise<T> {
     const token = localStorage.getItem("authToken") || "";
+    console.log('DELETE request to:', `${this.HOST}${route}`);
     const request = await fetch(`${this.HOST}${route}`, {
       method: "DELETE",
       headers: {
@@ -221,10 +226,23 @@ export class ItinerariosAPI implements ApiRoutes {
       },
     });
 
-    const data = await request.json();
+    // Verificar si la respuesta tiene contenido antes de intentar parsear JSON
+    const text = await request.text();
+    let data;
+    
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      // Si el parsing falla y la respuesta fue exitosa, asumir que no hay body
+      if (request.ok) {
+        return {} as T;
+      }
+      throw new Error("Respuesta inválida del servidor");
+    }
 
     if (!request.ok) {
-      console.log(data);
+      console.error('DELETE failed. Status:', request.status);
+      console.error('Response data:', data);
       const { message } = data as ErrorResponse;
       throw new Error(message);
     }
@@ -411,6 +429,13 @@ export class ItinerariosAPI implements ApiRoutes {
   async sendFriendRequest(receiving: string): Promise<SendFriend> {
     return await this.post<SendFriend>("/amigo/solicitud", true, { receiving });
   }
+
+  async cancelFriendRequest(receiving: string): Promise<CancelRequest> {
+    return await this.post<CancelRequest>("/amigo/cancelar", true, { receiving });
+  }
+  async countFriends(correo: string): Promise<CountFriendsResponse> {
+  return await this.get<CountFriendsResponse>(`/amigo/cont/${correo}`, true);
+}
 
   async respondFriendRequest(
     id: number,
@@ -657,6 +682,19 @@ export class ItinerariosAPI implements ApiRoutes {
       {}
     );
   }
+
+    /**
+     * Trae todos los reportes con la info de la publicación ya "poblada"
+     * (fotos, titulo itinerario, descripcion) para armar la card rápido.
+     * Ruta Back: GET /reporte/admin/preview
+     */
+    async getAdminReportsPreview(): Promise<AdminReportPreview[]> {
+        return await this.get<AdminReportPreview[]>("/reports/", true);
+    }
+
+    async deleteUserByUsername(username: string): Promise<DeleteUserResponse> {
+        return await this.delete<DeleteUserResponse>(`/user/admin/delete/${encodeURIComponent(username)}`);
+    }
 
   /**
    * Obtiene el detalle extendido de un reporte para el admin.

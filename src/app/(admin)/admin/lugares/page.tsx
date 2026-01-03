@@ -299,16 +299,178 @@ export default function LugaresPage() {
                     <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
                         <h2 className="text-xl font-bold mb-6 text-gray-900">Agregar Nuevo Lugar</h2>
                         <form onSubmit={handleCreatePlace} className="space-y-4">
-                            {/* Form fields simplificados para el ejemplo, usa tu lógica original aquí dentro */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label className="text-xs font-bold text-gray-500 uppercase">Nombre</label><input required className="w-full mt-1 p-2 border rounded-lg" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} /></div>
-                                <div><label className="text-xs font-bold text-gray-500 uppercase">Categoría</label><select className="w-full mt-1 p-2 border rounded-lg" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>{CATEGORIAS.map(c => <option key={c} value={c}>{getCategoryName(c)}</option>)}</select></div>
+                            {/* Nombre */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">Nombre *</label>
+                                <input 
+                                    required 
+                                    className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                    value={formData.nombre} 
+                                    onChange={e => setFormData({...formData, nombre: e.target.value})} 
+                                    placeholder="Nombre del lugar"
+                                />
                             </div>
-                            <div><label className="text-xs font-bold text-gray-500 uppercase">Google Maps URL</label><input required className="w-full mt-1 p-2 border rounded-lg" value={formData.google_maps_url} onChange={handleGoogleMapsLink} placeholder="Pega el link aquí..." /></div>
-                             {/* ... resto de campos ... */}
-                             <div className="flex justify-end gap-2 pt-4">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
-                                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Guardar Lugar</button>
+
+                            {/* Descripción */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">Descripción</label>
+                                <textarea 
+                                    className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" 
+                                    rows={3}
+                                    value={formData.descripcion} 
+                                    onChange={e => setFormData({...formData, descripcion: e.target.value})} 
+                                    placeholder="Descripción del lugar"
+                                />
+                            </div>
+
+                            {/* Categoría y Estado */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Categoría *</label>
+                                    <select 
+                                        required
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                        value={formData.category} 
+                                        onChange={e => setFormData({...formData, category: e.target.value})}
+                                    >
+                                        <option value="">Seleccionar categoría</option>
+                                        {CATEGORIAS.map(c => <option key={c} value={c}>{getCategoryName(c)}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Estado *</label>
+                                    <select 
+                                        required
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                        value={formData.mexican_state} 
+                                        onChange={e => setFormData({...formData, mexican_state: e.target.value})}
+                                    >
+                                        <option value="">Seleccionar estado</option>
+                                        {ESTADOS_MEXICO.map(e => <option key={e} value={e}>{e}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* URL de Imagen */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">URL de Imagen *</label>
+                                <input 
+                                    required
+                                    type="url"
+                                    className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                    value={formData.foto_url} 
+                                    onChange={e => setFormData({...formData, foto_url: e.target.value})} 
+                                    placeholder="https://ejemplo.com/imagen.jpg"
+                                />
+                                {formData.foto_url && (
+                                    <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 h-32">
+                                        <Image 
+                                            src={formData.foto_url} 
+                                            alt="Preview" 
+                                            width={300} 
+                                            height={128}
+                                            className="w-full h-full object-cover"
+                                            onError={() => toast.error("No se pudo cargar la imagen")}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Google Maps URL */}
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">Google Maps URL *</label>
+                                <input 
+                                    required
+                                    className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                    value={formData.google_maps_url} 
+                                    onChange={handleGoogleMapsLink} 
+                                    placeholder="https://maps.google.com/?q=..."
+                                />
+                                {(formData.latitud !== 0 || formData.longitud !== 0) && (
+                                    <p className="text-xs text-green-600 mt-1">✓ Coordenadas extraídas: {formData.latitud.toFixed(4)}, {formData.longitud.toFixed(4)}</p>
+                                )}
+                            </div>
+
+                            {/* Latitud y Longitud Manual */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Latitud *</label>
+                                    <input 
+                                        required
+                                        type="number"
+                                        step="0.0001"
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                        value={formData.latitud} 
+                                        onChange={e => setFormData({...formData, latitud: parseFloat(e.target.value) || 0})} 
+                                        placeholder="0.0000"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Longitud *</label>
+                                    <input 
+                                        required
+                                        type="number"
+                                        step="0.0001"
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                        value={formData.longitud} 
+                                        onChange={e => setFormData({...formData, longitud: parseFloat(e.target.value) || 0})} 
+                                        placeholder="0.0000"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Calificación y Reseñas */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Calificación Google</label>
+                                    <input 
+                                        type="number"
+                                        step="0.1"
+                                        min="0"
+                                        max="5"
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                        value={formData.google_score} 
+                                        onChange={e => setFormData({...formData, google_score: parseFloat(e.target.value) || 0})} 
+                                        placeholder="0.0"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Total de Reseñas</label>
+                                    <input 
+                                        type="number"
+                                        min="0"
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                        value={formData.total_reviews} 
+                                        onChange={e => setFormData({...formData, total_reviews: parseInt(e.target.value) || 0})} 
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* ID Auto-generado */}
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p className="text-xs font-bold text-gray-500 uppercase">ID de la API (Auto-generado)</p>
+                                <p className="text-sm text-gray-700 mt-1 font-mono">Se generará automáticamente al guardar</p>
+                            </div>
+
+                            {/* Botones */}
+                             <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        setIsModalOpen(false);
+                                        setFormData({ id_api_place: "", nombre: "", descripcion: "", category: "", mexican_state: "", foto_url: "", google_maps_url: "", latitud: 0, longitud: 0, google_score: 0, total_reviews: 0 });
+                                    }} 
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm shadow-indigo-200"
+                                >
+                                    Guardar Lugar
+                                </button>
                              </div>
                         </form>
                     </div>

@@ -66,9 +66,14 @@ export function ActivityListPanel({
         <Button
           size="sm"
           onClick={onAddPlace}
-          className="h-8 text-xs font-semibold px-3 shadow-sm"
+          disabled={activities.length === 5}
+          className={cn(
+            "h-8 text-xs font-semibold px-3 shadow-sm",
+            activities.length === 5 && "opacity-50 cursor-not-allowed"
+          )}
         >
-          <Plus className="h-3.5 w-3.5 mr-1.5" /> Agregar
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          {activities.length === 5 ? "Límite alcanzado" : "Agregar"}
         </Button>
       </div>
 

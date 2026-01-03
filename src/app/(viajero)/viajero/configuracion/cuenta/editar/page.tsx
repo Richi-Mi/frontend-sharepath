@@ -12,12 +12,13 @@ import {
   User,
   Key,
   Check,
-  ChevronRight,
   Loader2,
   Trash2,
   CheckCircle2,
   ShieldCheck,
   Pencil,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,7 +43,17 @@ import { ItinerariosAPI } from "@/api/ItinerariosAPI";
 import { Usuario } from "@/api/interfaces/ApiRoutes";
 import { cn } from "@/lib/utils";
 
-// --- VALIDACIONES (Lógica intacta) ---
+// --- VALIDACIONES DE CONTRASEÑA ---
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$_?¿*]).{8,}$/;
+
+const newPasswordSchema = z
+  .string()
+  .min(8, "La contraseña debe tener mínimo 8 caracteres")
+  .regex(passwordRegex, {
+    message:
+      "La contraseña debe contener mayúscula, minúscula, número y un carácter especial válido (#, $, _, ?, ¿, *).",
+  });
+
 const profileSchema = z.object({
   nombre_completo: z
     .string()
@@ -71,6 +82,13 @@ export default function EditAccountPage() {
   const [verifying, setVerifying] = useState(false);
   const [updating, setUpdating] = useState(false);
 
+  // Estados de interfaz (Visibilidad y Errores)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  
+  // NUEVO: Estado para el mensaje de error en línea
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: { nombre_completo: "", username: "" },
@@ -89,7 +107,7 @@ export default function EditAccountPage() {
     });
   }, []);
 
-  // --- HANDLERS (Lógica intacta) ---
+  // --- HANDLERS ---
   const handleSave = async (values: ProfileForm) => {
     if (!user) return;
     const body: any = {
@@ -102,7 +120,6 @@ export default function EditAccountPage() {
       loading: "Guardando cambios...",
       success: (data) => {
         setUser(data);
-        // Actualizar estados locales para reflejar la verdad
         form.reset({
           nombre_completo: data.nombre_completo,
           username: data.username,
@@ -164,9 +181,23 @@ export default function EditAccountPage() {
   };
 
   const handleUpdatePassword = async () => {
-    if (newPassword.length < 8)
-      return toast.error("La contraseña debe tener mínimo 8 caracteres");
+    // 1. Limpiamos errores previos
+    setPasswordError(null);
+
+    // 2. Validación con Zod
+    try {
+      newPasswordSchema.parse(newPassword);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        // En lugar de toast, guardamos el error en el estado para mostrarlo abajo del input
+        setPasswordError(err.issues[0].message);
+        return; // Detenemos la ejecución
+      }
+      return toast.error("Contraseña inválida");
+    }
+
     setUpdating(true);
+    
     toast.promise(api.updatePassword({ newPassword }), {
       loading: "Actualizando...",
       success: () => {
@@ -174,6 +205,9 @@ export default function EditAccountPage() {
         setCurrentPassword("");
         setNewPassword("");
         setUpdating(false);
+        setShowCurrentPassword(false);
+        setShowNewPassword(false);
+        setPasswordError(null); // Limpiamos error al finalizar
         return "Contraseña actualizada";
       },
       error: (err) => {
@@ -188,7 +222,7 @@ export default function EditAccountPage() {
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
       
-      {/* HEADER MINIMALISTA */}
+      {/* HEADER */}
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -211,15 +245,11 @@ export default function EditAccountPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
           
-          {/* --- COLUMNA IZQUIERDA: IDENTIDAD (Sticky) --- */}
+          {/* --- IZQUIERDA: PERFIL --- */}
           <div className="lg:col-span-4 relative">
             <div className="lg:sticky lg:top-24 space-y-6">
-              
-              {/* Tarjeta de Identidad */}
               <div className="relative group overflow-hidden rounded-3xl bg-card border border-border/50 shadow-xl dark:shadow-none dark:bg-muted/10 p-8 text-center">
-                {/* Fondo decorativo */}
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent opacity-50 group-hover:opacity-70 transition-opacity" />
-                
                 <div className="relative z-10 flex flex-col items-center">
                   <div className="relative mb-4">
                     <input
@@ -264,7 +294,6 @@ export default function EditAccountPage() {
                 </div>
               </div>
 
-              {/* Tips rápidos */}
               <div className="hidden lg:block p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 text-blue-800 dark:text-blue-300 text-sm">
                 <p className="font-semibold flex items-center gap-2 mb-1">
                   <Globe className="h-4 w-4" /> ¿Sabías qué?
@@ -276,10 +305,10 @@ export default function EditAccountPage() {
             </div>
           </div>
 
-          {/* --- COLUMNA DERECHA: FORMULARIOS --- */}
+          {/* --- DERECHA: FORMULARIOS --- */}
           <div className="lg:col-span-8 space-y-12">
             
-            {/* SECCIÓN 1: DATOS PÚBLICOS */}
+            {/* 1. INFO PÚBLICA */}
             <section className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -339,13 +368,11 @@ export default function EditAccountPage() {
                     />
                   </div>
 
-                  {/* Selector de Privacidad Visual */}
                   <div className="space-y-3">
                     <FormLabel className="text-xs uppercase tracking-wide text-muted-foreground font-bold">
                       Visibilidad
                     </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Opción Pública */}
                       <div
                         onClick={() => setPrivacidad("publica")}
                         className={cn(
@@ -367,7 +394,6 @@ export default function EditAccountPage() {
                         )}
                       </div>
 
-                      {/* Opción Privada */}
                       <div
                         onClick={() => setPrivacidad("privada")}
                         className={cn(
@@ -402,7 +428,7 @@ export default function EditAccountPage() {
 
             <Separator className="bg-border/60" />
 
-            {/* SECCIÓN 2: SEGURIDAD */}
+            {/* 2. SEGURIDAD */}
             <section className="space-y-6">
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -417,13 +443,14 @@ export default function EditAccountPage() {
               </div>
 
               <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-6">
-                {/* Paso 1: Verificar */}
+                
+                {/* --- Paso 1: Verificar --- */}
                 <div className="space-y-3">
                     <label className="text-xs uppercase tracking-wide text-muted-foreground font-bold">Contraseña Actual</label>
                     <div className="flex gap-3">
                         <div className="relative flex-1">
                             <Input
-                                type="password"
+                                type={showCurrentPassword ? "text" : "password"}
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
                                 disabled={verified}
@@ -433,10 +460,20 @@ export default function EditAccountPage() {
                                 )}
                                 placeholder="••••••••"
                             />
-                            {verified && (
+                            {verified ? (
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in">
                                     <CheckCircle2 className="h-5 w-5" />
                                 </div>
+                            ) : (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-1 top-1 h-10 w-10 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+                                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                >
+                                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
                             )}
                         </div>
                         {!verified && (
@@ -452,18 +489,45 @@ export default function EditAccountPage() {
                     </div>
                 </div>
 
-                {/* Paso 2: Nueva (Visible solo tras verificar) */}
+                {/* --- Paso 2: Nueva (Visible solo tras verificar) --- */}
                 {verified && (
                     <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
                         <div className="space-y-3">
                             <label className="text-xs uppercase tracking-wide text-muted-foreground font-bold">Nueva Contraseña</label>
-                            <Input
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                className="h-12 bg-background border-input focus:border-emerald-500 transition-all rounded-xl"
-                                placeholder="Mínimo 8 caracteres, mayúscula y símbolo..."
-                            />
+                            
+                            <div className="relative">
+                              <Input
+                                  type={showNewPassword ? "text" : "password"}
+                                  value={newPassword}
+                                  onChange={(e) => {
+                                      setNewPassword(e.target.value);
+                                      if (passwordError) setPasswordError(null); // Limpiar error al escribir
+                                  }}
+                                  className={cn(
+                                    "h-12 bg-background border-input focus:border-emerald-500 transition-all rounded-xl pr-10",
+                                    // Si hay error, borde rojo
+                                    passwordError && "border-destructive focus:border-destructive"
+                                  )}
+                                  placeholder="Mínimo 8 caracteres, mayúscula y símbolo..."
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-1 top-1 h-10 w-10 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                              >
+                                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
+
+                            {/* --- AQUÍ EL MENSAJE DE ERROR --- */}
+                            {passwordError && (
+                              <p className="text-[0.8rem] font-medium text-destructive animate-in slide-in-from-top-1">
+                                {passwordError}
+                              </p>
+                            )}
+
                             <div className="flex justify-end mt-4">
                                 <Button 
                                     onClick={handleUpdatePassword} 
@@ -482,7 +546,7 @@ export default function EditAccountPage() {
 
             <Separator className="bg-border/60" />
 
-            {/* SECCIÓN 3: DANGER ZONE */}
+            {/* 3. DANGER ZONE */}
             <section className="space-y-6 opacity-90 hover:opacity-100 transition-opacity">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center text-destructive">

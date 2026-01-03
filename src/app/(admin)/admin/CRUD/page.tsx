@@ -19,6 +19,17 @@ import {
 } from "lucide-react"; // Usamos Lucide para consistencia con el primer diseño
 import { ItinerariosAPI } from "@/api/ItinerariosAPI";
 import { ItinerarioData } from "@/api/interfaces/ApiRoutes";
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // --- Interfaces ---
 type ItinerarioUI = ItinerarioData & {
@@ -42,6 +53,13 @@ export default function ItinerariosPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [itinerarioSeleccionado, setItinerarioSeleccionado] = useState<ItinerarioUI | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [loadingModal, setLoadingModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ open: false, title: "", description: "", onConfirm: () => {} });
   
   const api = useMemo(() => ItinerariosAPI.getInstance(), []);
 
@@ -61,23 +79,62 @@ export default function ItinerariosPage() {
         : (listResp as any)?.itinerarios || (listResp as any)?.items || [];
 
       if (Array.isArray(fetchedItinerarios) && fetchedItinerarios.length > 0) {
-        const mapped = fetchedItinerarios.map((it: any) => ({
-          ...it,
-          id: it.id ?? it.itinerario_id ?? it._id ?? it.Id,
-          title: it.title ?? it.nombre ?? it.name ?? "Sin nombre",
-          actividades: Array.isArray(it.actividades) ? it.actividades : (it.activities || []),
-          createdAt: it.createdAt ?? it.fecha_creacion ?? it.created_at ?? new Date().toISOString(),
-          estado: ((it.estado === "Aprobado" || it.estado === "aprobado") ? "Publicado" : it.estado) as ItinerarioUI["estado"] ?? "Publicado",
-          autor: {
-            username: it.usuario?.username || it.user?.username || it.owner?.username || it.autor?.username || it.username || "Anónimo",
-            correo: it.usuario?.correo || it.user?.correo || it.owner?.correo || it.autor?.correo || it.correo || "",
-            nombre: it.usuario?.nombre_completo || it.user?.nombre_completo || it.owner?.nombre_completo || it.autor?.nombre || it.nombre_usuario || "",
-          },
-          imagenes: it.imagenes || it.images || it.fotos || it.gallery || (it.cover ? [it.cover] : []),
-          descripcion: it.descripcion ?? it.description ?? "Sin descripción disponible.",
-          calificacion: it.calificacion ?? it.google_score ?? it.rating ?? 0,
-        }));
-        setItinerariosData(mapped);
+        const mapped = fetchedItinerarios.map((it: any) => {
+          // Extraer autor de diferentes posibles ubicaciones
+          const autor = it.usuario || it.user || it.owner || it.autor || {};
+          return {
+            ...it,
+            id: it.id ?? it.itinerario_id ?? it._id ?? it.Id,
+            title: it.title ?? it.nombre ?? it.name ?? "Sin nombre",
+            actividades: Array.isArray(it.actividades) ? it.actividades : (Array.isArray(it.activities) ? it.activities : []),
+            createdAt: it.createdAt ?? it.fecha_creacion ?? it.created_at ?? new Date().toISOString(),
+            estado: ((it.estado === "Aprobado" || it.estado === "aprobado") ? "Publicado" : it.estado) as ItinerarioUI["estado"] ?? "Publicado",
+            autor: {
+              username: autor.username || it.username || "Anónimo",
+              correo: autor.correo || autor.email || it.correo || "",
+              nombre: autor.nombre_completo || autor.full_name || autor.nombre || it.nombre_usuario || "",
+            },
+            imagenes: it.imagenes || it.images || it.fotos || it.gallery || (it.cover ? [it.cover] : []),
+            descripcion: it.descripcion ?? it.description ?? "Sin descripción disponible.",
+            calificacion: it.calificacion ?? it.google_score ?? it.rating ?? 0,
+          };
+        });
+
+        // Enriquecer cada itinerario con los mismos datos detallados que usa el modal
+        const enriched = await Promise.all(
+          mapped.map(async (base) => {
+            try {
+              const detalle = await api.getItinerarioById(base.id);
+              const autorDetalle = detalle.usuario || detalle.user || detalle.owner || detalle.autor || detalle.creador || detalle.created_by || {};
+              const actividadesDetalle = Array.isArray(detalle.actividades)
+                ? detalle.actividades
+                : (Array.isArray(detalle.activities) ? detalle.activities : (base.actividades || []));
+
+              return {
+                ...base,
+                ...detalle,
+                id: detalle.id ?? base.id,
+                title: detalle.title ?? detalle.nombre ?? base.title,
+                actividades: actividadesDetalle,
+                createdAt: detalle.createdAt ?? detalle.fecha_creacion ?? detalle.created_at ?? base.createdAt,
+                autor: {
+                  username: autorDetalle.username || detalle.username || detalle.username_user || base.autor?.username || "Anónimo",
+                  correo: autorDetalle.correo || autorDetalle.email || detalle.correo || detalle.email || base.autor?.correo || "",
+                  nombre: autorDetalle.nombre_completo || autorDetalle.full_name || autorDetalle.nombre || detalle.nombre_completo || detalle.full_name || detalle.nombre_usuario || base.autor?.nombre || "",
+                },
+                imagenes: detalle.imagenes || detalle.images || detalle.fotos || detalle.gallery || base.imagenes,
+                descripcion: detalle.descripcion ?? detalle.description ?? base.descripcion,
+                calificacion: detalle.calificacion ?? detalle.google_score ?? detalle.rating ?? base.calificacion ?? 0,
+                estado: ((detalle.estado === "Aprobado" || detalle.estado === "aprobado") ? "Publicado" : detalle.estado) as ItinerarioUI["estado"] ?? base.estado,
+              } as ItinerarioUI;
+            } catch (err) {
+              console.warn("No se pudo enriquecer itinerario", base.id, err);
+              return base;
+            }
+          })
+        );
+
+        setItinerariosData(enriched);
       } else {
         setItinerariosData([]);
       }
@@ -106,9 +163,76 @@ export default function ItinerariosPage() {
   const handleVerItinerario = (id: number | string) => {
     const it = itinerariosData.find((i) => String(i.id) === String(id));
     if (!it) return;
-    setItinerarioSeleccionado(it);
-    setCarouselIndex(0);
-    setModalAbierto(true);
+    
+    // Cargar datos completos del itinerario incluyendo el autor y las paradas
+    setLoadingModal(true);
+    api.getItinerarioById(id)
+      .then(async (itinerarioDetalle: any) => {
+        console.log("Itinerario detalle recibido:", itinerarioDetalle);
+        
+        // Mapear datos del itinerario detallado
+        const autorDetalle = itinerarioDetalle.usuario || itinerarioDetalle.user || itinerarioDetalle.owner || itinerarioDetalle.autor || {};
+        
+        // Obtener detalles de cada lugar/parada
+        let actividadesConDetalles = Array.isArray(itinerarioDetalle.actividades) 
+          ? itinerarioDetalle.actividades 
+          : (Array.isArray(itinerarioDetalle.activities) ? itinerarioDetalle.activities : (Array.isArray(it.actividades) ? it.actividades : []));
+        
+        console.log("Actividades encontradas:", actividadesConDetalles);
+        
+        // Cargar detalles de lugares si existen id_api_place
+        try {
+          actividadesConDetalles = await Promise.all(
+            actividadesConDetalles.map(async (actividad: any) => {
+              console.log("Procesando actividad:", actividad);
+              const idPlace = actividad.id_api_place || actividad.lugarId || actividad.lugar_id;
+              
+              if (idPlace) {
+                try {
+                  console.log("Cargando lugar con ID:", idPlace);
+                  const lugarDetalle = await api.getLugarById(idPlace);
+                  console.log("Lugar cargado:", lugarDetalle);
+                  return {
+                    ...actividad,
+                    lugarDetalle: lugarDetalle
+                  };
+                } catch (err) {
+                  console.warn(`Error cargando lugar ${idPlace}:`, err);
+                  return actividad;
+                }
+              }
+              return actividad;
+            })
+          );
+        } catch (err) {
+          console.warn("Error cargando detalles de lugares:", err);
+        }
+
+        const itinerarioConDetalles: ItinerarioUI = {
+          ...it,
+          ...itinerarioDetalle,
+          id: itinerarioDetalle.id ?? it.id,
+          title: itinerarioDetalle.title ?? itinerarioDetalle.nombre ?? it.title,
+          actividades: actividadesConDetalles,
+          createdAt: itinerarioDetalle.createdAt ?? itinerarioDetalle.fecha_creacion ?? itinerarioDetalle.created_at ?? it.createdAt,
+          autor: {
+            username: autorDetalle.username || it.autor?.username || "Anónimo",
+            correo: autorDetalle.correo || autorDetalle.email || it.autor?.correo || "",
+            nombre: autorDetalle.nombre_completo || autorDetalle.full_name || autorDetalle.nombre || it.autor?.nombre || "",
+          }
+        };
+        console.log("Itinerario cargado completamente:", itinerarioConDetalles);
+        setItinerarioSeleccionado(itinerarioConDetalles);
+        setCarouselIndex(0);
+        setModalAbierto(true);
+      })
+      .catch((err) => {
+        console.error("Error cargando itinerario:", err);
+        setItinerarioSeleccionado(it);
+        setCarouselIndex(0);
+        setModalAbierto(true);
+      })
+      .finally(() => setLoadingModal(false));
   };
 
   const cerrarModal = () => {
@@ -131,17 +255,31 @@ export default function ItinerariosPage() {
   };
 
   const handleEliminar = async (id: number | string) => {
-    if (!confirm("¿Eliminar este itinerario permanentemente?")) return;
-    try {
-      setDeletingId(Number(id));
-      await api.deleteItinerario(id);
-      setItinerariosData((prev) => prev.filter((item) => item.id !== id));
-      alert("Itinerario eliminado.");
-    } catch (err: any) {
-      alert(`Error: ${err?.message}`);
-    } finally {
-      setDeletingId(null);
+    const itinerario = itinerariosData.find((item) => item.id === id);
+    const username = itinerario?.autor?.username;
+    
+    if (!username) {
+      toast.error("No se pudo identificar el username del autor del itinerario.");
+      return;
     }
+    
+    setConfirmDialog({
+      open: true,
+      title: "Eliminar itinerario",
+      description: "¿Eliminar este itinerario permanentemente? Esta acción no se puede deshacer.",
+      onConfirm: async () => {
+        try {
+          setDeletingId(Number(id));
+          await api.deleteUserByUsername(username);
+          setItinerariosData((prev) => prev.filter((item) => item.id !== id));
+          toast.success("Itinerario eliminado.");
+        } catch (err: any) {
+          toast.error(`Error: ${err?.message}`);
+        } finally {
+          setDeletingId(null);
+        }
+      }
+    });
   };
 
   // --- Render Skeleton ---
@@ -235,7 +373,6 @@ export default function ItinerariosPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Itinerario</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Autor</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Detalles</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
@@ -282,11 +419,13 @@ export default function ItinerariosPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 mr-2">
-                              {getInitials(item.autor?.username || "A")}
+                              {getInitials(item.autor?.nombre || item.autor?.username || "A")}
                            </div>
                            <div className="flex flex-col">
-                             <span className="text-sm font-medium text-gray-900">{item.autor?.username || "Desconocido"}</span>
-                             <span className="text-xs text-gray-500">{item.autor?.correo}</span>
+                             <span className="text-sm font-medium text-gray-900">
+                                {item.autor?.nombre || item.autor?.username || "An\u00f3nimo"}
+                             </span>
+                             <span className="text-xs text-gray-500">{item.autor?.correo || "@" + (item.autor?.username || "desconocido")}</span>
                            </div>
                         </div>
                       </td>
@@ -295,32 +434,13 @@ export default function ItinerariosPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col space-y-1">
                           <div className="flex items-center text-xs text-gray-600">
-                             <MapPin size={12} className="mr-1.5 text-gray-400" />
-                             {item.actividades?.length || 0} Paradas
-                          </div>
-                          <div className="flex items-center text-xs text-gray-600">
-                             <Calendar size={12} className="mr-1.5 text-gray-400" />
-                             {new Date(item.createdAt).toLocaleDateString()}
+                            <MapPin size={12} className="mr-1.5 text-gray-400" />
+                            {item.actividades?.length || 0} Paradas
                           </div>
                         </div>
                       </td>
 
-                      {/* Columna Estado */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
-                            ${item.estado === 'Publicado' 
-                              ? 'bg-green-50 text-green-700 border-green-100' 
-                              : item.estado === 'Reportado'
-                                ? 'bg-red-50 text-red-700 border-red-100'
-                                : 'bg-gray-100 text-gray-700 border-gray-200'
-                            }`}>
-                            {item.estado === 'Publicado' && <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>}
-                            {item.estado === 'Reportado' && <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>}
-                            {item.estado}
-                         </span>
-                      </td>
-
-                      {/* Columna Acciones */}
+                       {/* Columna Acciones */}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button
@@ -329,12 +449,6 @@ export default function ItinerariosPage() {
                             title="Ver detalles"
                           >
                             <Eye size={18} />
-                          </button>
-                          <button
-                            className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                            title="Configurar"
-                          >
-                            <Settings size={18} />
                           </button>
                           <button
                             onClick={() => handleEliminar(item.id)}
@@ -372,7 +486,7 @@ export default function ItinerariosPage() {
         >
           <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" />
           
-          <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="relative z-10 w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
             
             {/* Header Modal */}
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white z-20">
@@ -389,82 +503,114 @@ export default function ItinerariosPage() {
                </button>
             </div>
 
-            <div className="flex flex-col md:flex-row h-full overflow-hidden">
-               {/* Columna Izquierda: Galería */}
-               <div className="w-full md:w-1/2 bg-gray-900 relative flex items-center justify-center min-h-[300px] md:min-h-full">
-                  {(itinerarioSeleccionado as any).imagenes?.length > 0 ? (
-                    <>
-                       <img 
-                          src={(itinerarioSeleccionado as any).imagenes[carouselIndex]} 
-                          className="max-h-full max-w-full object-contain"
-                          alt="Galería"
-                       />
-                       {(itinerarioSeleccionado as any).imagenes.length > 1 && (
-                         <>
-                            <button 
-                              onClick={prevSlide}
-                              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors backdrop-blur-sm"
-                            >
-                               <ChevronLeft size={24} />
-                            </button>
-                            <button 
-                              onClick={nextSlide}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors backdrop-blur-sm"
-                            >
-                               <ChevronRight size={24} />
-                            </button>
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 px-3 py-1 rounded-full text-xs text-white">
-                               {carouselIndex + 1} / {(itinerarioSeleccionado as any).imagenes.length}
-                            </div>
-                         </>
-                       )}
-                    </>
-                  ) : (
-                     <div className="text-gray-500 flex flex-col items-center">
-                        <ImageIcon size={48} className="opacity-30 mb-2" />
-                        <span className="text-sm">Sin imágenes disponibles</span>
-                     </div>
-                  )}
-               </div>
-
-               {/* Columna Derecha: Información */}
-               <div className="w-full md:w-1/2 overflow-y-auto p-6 bg-white">
+            <div className="flex flex-col md:flex-row h-full">
+               {/* Columna Única: Información y Paradas */}
+              <div className="w-full bg-white p-6">
                   
                   <div className="space-y-6">
-                     {/* Descripción */}
-                     <div>
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Descripción</h4>
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                           {(itinerarioSeleccionado as any).descripcion}
-                        </p>
+                     {/* Información del Autor */}
+                     <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                        <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-3">Información del Autor</h4>
+                        <div className="flex items-center gap-3">
+                           <div className="h-10 w-10 rounded-full bg-indigo-200 flex items-center justify-center text-sm font-bold text-indigo-700">
+                              {getInitials(itinerarioSeleccionado.autor?.nombre || itinerarioSeleccionado.autor?.username || "A")}
+                           </div>
+                           <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                 {itinerarioSeleccionado.autor?.nombre || itinerarioSeleccionado.autor?.username || "Anónimo"}
+                              </p>
+                              <p className="text-xs text-indigo-600">@{itinerarioSeleccionado.autor?.username || "desconocido"}</p>
+                              <p className="text-xs text-gray-500">{itinerarioSeleccionado.autor?.correo || "Sin correo"}</p>
+                           </div>
+                        </div>
                      </div>
 
                      {/* Métricas */}
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                           <span className="text-indigo-600 block text-xs font-bold uppercase">Calificación</span>
-                           <span className="text-2xl font-bold text-indigo-900">{(itinerarioSeleccionado as any).calificacion.toFixed(1)}</span>
+                     <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                           <span className="text-indigo-600 block text-xs font-bold">Calificación</span>
+                           <span className="text-xl font-bold text-indigo-900">{((itinerarioSeleccionado as any).calificacion || 0).toFixed(1)}</span>
                         </div>
-                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                           <span className="text-emerald-600 block text-xs font-bold uppercase">Paradas</span>
-                           <span className="text-2xl font-bold text-emerald-900">{itinerarioSeleccionado.actividades?.length || 0}</span>
+                        <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                           <span className="text-emerald-600 block text-xs font-bold">Paradas</span>
+                           <span className="text-xl font-bold text-emerald-900">{itinerarioSeleccionado.actividades?.length || 0}</span>
                         </div>
                      </div>
 
-                     {/* Lista de Actividades (Timeline simple) */}
+                     {/* Lista de Actividades/Paradas */}
                      <div>
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Ruta de Actividades</h4>
-                        <div className="space-y-0 border-l-2 border-gray-100 ml-2 pl-4">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Ruta de Paradas ({itinerarioSeleccionado.actividades?.length || 0})</h4>
+                        <div className="space-y-0 border-l-2 border-gray-200 ml-2 pl-4">
                            {itinerarioSeleccionado.actividades?.length > 0 ? (
                               itinerarioSeleccionado.actividades.map((act: any, idx: number) => (
                                  <div key={idx} className="relative pb-6 last:pb-0">
-                                    <div className="absolute -left-[23px] top-1 h-3 w-3 rounded-full bg-gray-300 ring-4 ring-white"></div>
-                                    <h5 className="text-sm font-semibold text-gray-900">{act.titulo || act.nombre || `Parada ${idx + 1}`}</h5>
-                                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{act.descripcion || "Sin descripción"}</p>
+                                    <div className="absolute -left-[23px] top-1 h-3 w-3 rounded-full bg-indigo-500 ring-4 ring-white"></div>
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                       {/* Nombre de la Parada */}
+                                       <h5 className="text-sm font-semibold text-gray-900">
+                                          {act.lugarDetalle?.nombre || act.titulo || act.nombre || `Parada ${idx + 1}`}
+                                       </h5>
+                                       
+                                       {/* Detalles del Lugar si existen */}
+                                       {act.lugarDetalle ? (
+                                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                                             <div className="grid grid-cols-2 gap-2">
+                                                {act.lugarDetalle.categoria && (
+                                                   <div className="text-xs">
+                                                      <span className="font-semibold text-gray-700">Categoría:</span>
+                                                      <p className="text-gray-600">{act.lugarDetalle.categoria}</p>
+                                                   </div>
+                                                )}
+                                                {act.lugarDetalle.mexican_state && (
+                                                   <div className="text-xs">
+                                                      <span className="font-semibold text-gray-700">Estado:</span>
+                                                      <p className="text-gray-600">{act.lugarDetalle.mexican_state}</p>
+                                                   </div>
+                                                )}
+                                                {act.lugarDetalle.google_score && (
+                                                   <div className="text-xs">
+                                                      <span className="font-semibold text-gray-700">Calificación:</span>
+                                                      <p className="text-yellow-600">★ {act.lugarDetalle.google_score}</p>
+                                                   </div>
+                                                )}
+                                                {act.lugarDetalle.total_reviews && (
+                                                   <div className="text-xs">
+                                                      <span className="font-semibold text-gray-700">Reseñas:</span>
+                                                      <p className="text-gray-600">{act.lugarDetalle.total_reviews}</p>
+                                                   </div>
+                                                )}
+                                             </div>
+                                             {act.lugarDetalle.descripcion && (
+                                                <p className="text-xs text-gray-600 line-clamp-2 mt-2">{act.lugarDetalle.descripcion}</p>
+                                             )}
+                                             {(act.lugarDetalle.latitud || act.lugarDetalle.longitud) && (
+                                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-2">
+                                                   <MapPin size={12} />
+                                                   {act.lugarDetalle.latitud?.toFixed(4)}, {act.lugarDetalle.longitud?.toFixed(4)}
+                                                </p>
+                                             )}
+                                          </div>
+                                       ) : (
+                                          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                                             {act.descripcion && (
+                                                <p className="text-xs text-gray-600">{act.descripcion}</p>
+                                             )}
+                                             {act.fecha && (
+                                                <p className="text-xs text-gray-500 flex items-center gap-1">
+                                                   <Calendar size={12} />
+                                                   {new Date(act.fecha).toLocaleDateString('es-MX')}
+                                                </p>
+                                             )}
+                                             {!act.descripcion && !act.fecha && (
+                                                <p className="text-xs text-gray-400 italic">Sin detalles adicionales</p>
+                                             )}
+                                          </div>
+                                       )}
+                                    </div>
                                  </div>
                               ))
                            ) : (
-                              <p className="text-sm text-gray-400 italic">No hay actividades registradas.</p>
+                              <p className="text-sm text-gray-400 italic">No hay paradas registradas.</p>
                            )}
                         </div>
                      </div>
@@ -481,13 +627,36 @@ export default function ItinerariosPage() {
                >
                   Cerrar
                </button>
-               <button className="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-indigo-700 shadow-sm">
-                  Editar Contenido
-               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, open: false })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDialog({ ...confirmDialog, open: false })}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                confirmDialog.onConfirm?.();
+                setConfirmDialog({ ...confirmDialog, open: false });
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

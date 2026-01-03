@@ -10,15 +10,15 @@ import { Card, CardContent } from "@/components/ui/card";
 const items = [
   {
     title: "Planea tu día perfecto",
-    image: "/test3.svg",
+    image: "/foto1.png",
   },
   {
     title: "Visualiza todo tu viaje",
-    image: "/test3.svg",
+    image: "/foto2.png",
   },
   {
     title: "Ajusta tu ruta sobre la marcha",
-    image: "/test3.svg",
+    image: "/foto3.png",
   },
 ];
 

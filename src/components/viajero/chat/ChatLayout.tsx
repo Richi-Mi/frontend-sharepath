@@ -93,12 +93,12 @@ export function ChatLayout() {
 
   const activeIdRef = useRef<string | undefined>(undefined); //Para acceder al chat del amigo
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => { activeIdRef.current = activeId }, [activeId]);
 
   React.useEffect(() => {
-    audioRef.current = new Audio('/audio/nvoMsg.mp3');
+    // audioRef.current = new Audio('/audio/nvoMsg.mp3');
 
     if (!socket || !userID || !username) {
         // console.log("ChatLayout: Esperando username socket y userID... Socket no listo");
@@ -205,14 +205,7 @@ export function ChatLayout() {
       }));
     });
 
-    socket.on("private message", (message: { content: string; from: string; to: string }) => {
-        // console.log("ChatLayout: Recibido evento 'private message'", message);
-
-        audioRef.current?.play()
-        // audioRef.current?.play().catch((error) => {
-        //   console.warn("El navegador bloqueo el sonido por falta de interacción", error)
-        // });
-
+    const nuevoMensaje = (message: { content: string; from: string; to: string }) => {
         const currentActiveId = activeIdRef.current;
         
         const fromSelf = message.from === userID; //Mensajes a mi mismo
@@ -224,10 +217,10 @@ export function ChatLayout() {
           socket.emit("mark messages read", { withUserID: message.from });
         }
 
-        if(!fromSelf)
-        {
-          socket.emit("mark messages received", { withUserID: message.from });
-        }
+        // if(!fromSelf)
+        // {
+        //   socket.emit("mark messages received", { withUserID: message.from });
+        // }
 
         setSocketUsers((prev) => {
           const senderUser = prev.find((u) => u.userID === message.from);
@@ -248,42 +241,88 @@ export function ChatLayout() {
 
           return [updatedUser, ...otherUsers];
         });
+    }
 
-        // setSocketUsers((prev) =>
-        //   prev.map((u) => {
-        //     const fromSelf = message.from === userID;
-        //     const targetUserID = fromSelf ? message.to : message.from;
-        //     const isChatOpen = activeIdRef.current === targetUserID;
+    socket.on("private message", nuevoMensaje);
+    // socket.on("private message", (message: { content: string; from: string; to: string }) => {
+    //     // console.log("ChatLayout: Recibido evento 'private message'", message);
 
-        //     if (u.userID === targetUserID) {
-        //       //Si el chat esta abierto y recibo un mensaje, se marca como leido
-        //       if(!fromSelf && isChatOpen)
-        //       {
-        //         socket.emit("mark messages read", { withUserID: targetUserID });
-        //       }
+    //     //audioRef.current?.play()
+    //     // audioRef.current?.play().catch((error) => {
+    //     //   console.warn("El navegador bloqueo el sonido por falta de interacción", error)
+    //     // });
 
-        //       if(!fromSelf)
-        //       {
-        //        socket.emit("mark messages received", { withUserID: targetUserID });
-        //       }
+    //     const currentActiveId = activeIdRef.current;
+        
+    //     const fromSelf = message.from === userID; //Mensajes a mi mismo
+    //     // const targetUserID = fromSelf ? message.to : message.from; //el target es el remitente (from)
+    //     const isChatOpen = activeIdRef.current === message.from; //El chat esta abierto?
 
-        //       return {
-        //         ...u,
-        //         messages: [...u.messages, message], //Se agrega el array existente
-        //         // hasNewMessages: u.userID !== activeId,
-        //         hasNewMessages: !isChatOpen,
-        //         // unreadCount: u.userID !== activeId ? (u.unreadCount + 1) : 0,
-        //         unreadCount: isChatOpen ? 0 : (u.unreadCount + 1),
+    //     if(!fromSelf && isChatOpen)
+    //     {
+    //       socket.emit("mark messages read", { withUserID: message.from });
+    //     }
 
-        //         lastMessage: message.content,
-        //         lastMessageHora: new Date().toISOString(),
-        //       };
-        //     }
-        //     return u;
-        //   })
-        // );
-      }
-    );
+    //     // if(!fromSelf)
+    //     // {
+    //     //   socket.emit("mark messages received", { withUserID: message.from });
+    //     // }
+
+    //     setSocketUsers((prev) => {
+    //       const senderUser = prev.find((u) => u.userID === message.from);
+
+    //       if(!senderUser) return prev;
+
+    //       const updatedUser = {
+    //         ...senderUser,
+    //         messages: [...senderUser.messages, message],
+    //         hasNewMessages: !isChatOpen,
+    //         // unreadCount: u.userID !== activeId ? (u.unreadCount + 1) : 0,
+    //         unreadCount: isChatOpen ? 0 : ((senderUser.unreadCount || 0) + 1),
+    //         lastMessage: message.content,
+    //         lastMessageHora: new Date().toISOString(),
+    //       };
+
+    //       const otherUsers = prev.filter((u) => u.userID !== message.from);
+
+    //       return [updatedUser, ...otherUsers];
+    //     });
+
+    //     // setSocketUsers((prev) =>
+    //     //   prev.map((u) => {
+    //     //     const fromSelf = message.from === userID;
+    //     //     const targetUserID = fromSelf ? message.to : message.from;
+    //     //     const isChatOpen = activeIdRef.current === targetUserID;
+
+    //     //     if (u.userID === targetUserID) {
+    //     //       //Si el chat esta abierto y recibo un mensaje, se marca como leido
+    //     //       if(!fromSelf && isChatOpen)
+    //     //       {
+    //     //         socket.emit("mark messages read", { withUserID: targetUserID });
+    //     //       }
+
+    //     //       if(!fromSelf)
+    //     //       {
+    //     //        socket.emit("mark messages received", { withUserID: targetUserID });
+    //     //       }
+
+    //     //       return {
+    //     //         ...u,
+    //     //         messages: [...u.messages, message], //Se agrega el array existente
+    //     //         // hasNewMessages: u.userID !== activeId,
+    //     //         hasNewMessages: !isChatOpen,
+    //     //         // unreadCount: u.userID !== activeId ? (u.unreadCount + 1) : 0,
+    //     //         unreadCount: isChatOpen ? 0 : (u.unreadCount + 1),
+
+    //     //         lastMessage: message.content,
+    //     //         lastMessageHora: new Date().toISOString(),
+    //     //       };
+    //     //     }
+    //     //     return u;
+    //     //   })
+    //     // );
+    //   }
+    // );
 
     socket.on("messages read", ({ byUserID }) => {
       // console.log('Mensaje Evento messages read');
@@ -324,7 +363,7 @@ export function ChatLayout() {
       socket.off("user connected");
       socket.off("user disconnected");
       socket.off("chat history");
-      socket.off("private message");
+      socket.off("private message", nuevoMensaje);
       socket.off("messages read");
       socket.off("message received");
     };
