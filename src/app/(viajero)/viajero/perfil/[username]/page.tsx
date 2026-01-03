@@ -35,7 +35,6 @@ export default function UserProfilePage() {
   const [friendsCount, setFriendsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [friendsCount, setFriendsCount] = useState(0);
   const [sendingRequest, setSendingRequest] = useState(false);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null); // estado para toast
@@ -95,7 +94,11 @@ export default function UserProfilePage() {
   }, [profile]);
 
   // Función para mostrar toast temporal
-  const showToast = (message: string, type: "success" | "error" = "success", duration = 3000) => {
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success",
+    duration = 3000
+  ) => {
     setToastMessage(message);
     setToastType(type);
     setTimeout(() => setToastMessage(null), duration);
@@ -133,8 +136,6 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-muted/10 dark:bg-background pb-10">
-
-      
       {/* --- Toast flotante --- */}
       {toastMessage && (
         <div
@@ -172,58 +173,51 @@ export default function UserProfilePage() {
       {/* --- BLOQUE DE IDENTIDAD --- */}
       <div className="max-w-3xl mx-auto px-4 -mt-24 relative z-20">
         <Card className="flex flex-col items-center p-6 md:p-8 shadow-xl border-border/50 bg-background/95 backdrop-blur-sm rounded-3xl">
-            
-            {/* Avatar */}
-            <div className="-mt-20 mb-4 p-1.5 bg-background rounded-full shadow-sm ring-1 ring-border/10">
-                <Avatar className="h-32 w-32 md:h-40 md:w-40 shadow-inner">
-                    <AvatarImage src={profile.foto_url || undefined} className="object-cover" />
-                    <AvatarFallback className="text-4xl bg-muted text-muted-foreground">
-                        {getInitials(profile.username)}
-                    </AvatarFallback>
-                </Avatar>
-            </div>
+          {/* Avatar */}
+          <div className="-mt-20 mb-4 p-1.5 bg-background rounded-full shadow-sm ring-1 ring-border/10">
+            <Avatar className="h-32 w-32 md:h-40 md:w-40 shadow-inner">
+              <AvatarImage
+                src={profile.foto_url || undefined}
+                className="object-cover"
+              />
+              <AvatarFallback className="text-4xl bg-muted text-muted-foreground">
+                {getInitials(profile.username)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
 
-            {/* Nombre */}
-            <div className="text-center space-y-1 mb-6">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-                    {profile.nombre_completo}
-                </h1>
-                <p className="text-base font-medium text-muted-foreground">
-                    @{profile.username}
-                </p>
-            </div>
+          {/* Nombre */}
+          <div className="text-center space-y-1 mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+              {profile.nombre_completo}
+            </h1>
+            <p className="text-base font-medium text-muted-foreground">
+              @{profile.username}
+            </p>
+          </div>
 
-            {/* Estadísticas */}
-            <div className="grid grid-cols-3 gap-8 md:gap-16 w-full max-w-md border-t border-b border-border/40 py-4 mb-2">
-                <StatItem 
-                    count={profile.publicaciones.length} 
-                    label="Itinerarios" 
-                    icon={MapIcon}
-                />
-                <StatItem 
-                    count={friendsCount} 
-                    label="Amigos" 
-                    icon={Users}
-                />
-                <StatItem 
-                    count={0} 
-                    label="Lugares" 
-                    icon={MapPin}
-                />
-            </div>
+          {/* Estadísticas */}
+          <div className="grid grid-cols-3 gap-8 md:gap-16 w-full max-w-md border-t border-b border-border/40 py-4 mb-2">
+            <StatItem
+              count={profile.publicaciones.length}
+              label="Publicaciones"
+              icon={MapIcon}
+            />
+            <StatItem count={friendsCount} label="Amigos" icon={Users} />
+            <StatItem count={0} label="Lugares" icon={MapPin} />
+          </div>
 
-            {/* Botón Añadir amigo */}
-            <div className="mt-6 w-full max-w-xs">
-                <Button 
-                  className="w-full rounded-full font-semibold shadow-sm" 
-                  size="lg"
-                  onClick={handleAddFriend}
-                  disabled={sendingRequest}
-                >
-                  {sendingRequest ? "Enviando..." : "Añadir amigo"}
-                </Button>
-            </div>
-
+          {/* Botón Añadir amigo */}
+          <div className="mt-6 w-full max-w-xs">
+            <Button
+              className="w-full rounded-full font-semibold shadow-sm"
+              size="lg"
+              onClick={handleAddFriend}
+              disabled={sendingRequest}
+            >
+              {sendingRequest ? "Enviando..." : "Añadir amigo"}
+            </Button>
+          </div>
         </Card>
       </div>
 
@@ -268,26 +262,26 @@ export default function UserProfilePage() {
                     >
                       <div className="group relative aspect-video w-full overflow-hidden rounded-xl bg-muted border border-border/50 shadow-sm hover:shadow-md transition-all">
                         {post.fotos.length > 0 ? (
-                            <>
-                                <Image
-                                    src={post.fotos[0].foto_url}
-                                    alt="Cover"
-                                    fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                            </>
+                          <>
+                            <Image
+                              src={post.fotos[0].foto_url}
+                              alt="Cover"
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                          </>
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                             <MapIcon className="h-8 w-8 opacity-20" />
                           </div>
                         )}
-                        </div>
-                        <div className="mt-2 px-1">
-                            <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                                Ver detalles del viaje
-                            </p>
-                        </div>
+                      </div>
+                      <div className="mt-2 px-1">
+                        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                          Ver detalles del viaje
+                        </p>
+                      </div>
                     </Link>
                   ))}
                 </div>
@@ -311,18 +305,28 @@ export default function UserProfilePage() {
 }
 
 // --- Componentes auxiliares ---
-function StatItem({ count, label, icon: Icon }: { count: number, label: string, icon: any }) {
-    return (
-        <div className="flex flex-col items-center justify-center gap-1 group cursor-default">
-            <div className="flex items-center gap-1.5 text-muted-foreground group-hover:text-primary transition-colors">
-                <Icon className="h-4 w-4" />
-                <span className="text-xs uppercase font-bold tracking-wider">{label}</span>
-            </div>
-            <span className="text-xl md:text-2xl font-bold text-foreground">
-                {count}
-            </span>
-        </div>
-    );
+function StatItem({
+  count,
+  label,
+  icon: Icon,
+}: {
+  count: number;
+  label: string;
+  icon: any;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-1 group cursor-default">
+      <div className="flex items-center gap-1.5 text-muted-foreground group-hover:text-primary transition-colors">
+        <Icon className="h-4 w-4" />
+        <span className="text-xs uppercase font-bold tracking-wider">
+          {label}
+        </span>
+      </div>
+      <span className="text-xl md:text-2xl font-bold text-foreground">
+        {count}
+      </span>
+    </div>
+  );
 }
 
 function EmptyState({ icon: Icon, text }: { icon: any; text: string }) {

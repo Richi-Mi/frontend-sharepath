@@ -470,7 +470,7 @@ function ItinerarySummaryPanel({
               type="button"
             >
               <ExternalLink className="h-3.5 w-3.5 mr-2" />
-              abrir
+              Abrir
             </Button>
           ) : null}
         </div>
@@ -1247,7 +1247,7 @@ export function PublicacionReadView({
                   onClick={() => router.push(itineraryHref)}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  ver itinerario
+                  Ver itinerario
                 </Button>
               )}
             </div>
@@ -1256,7 +1256,7 @@ export function PublicacionReadView({
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border/40">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              comparte, opina y guarda rutas
+              Comparte, opina y guarda rutas
             </div>
 
             <Button
@@ -1271,7 +1271,7 @@ export function PublicacionReadView({
               {refreshing ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
-              actualizar
+              Actualizar
             </Button>
           </div>
         </div>

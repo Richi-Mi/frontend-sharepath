@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   UserPlus,
@@ -74,6 +75,7 @@ const getIconAndColor = (type: string) => {
 export const NotificationCard = ({ notification }: { notification: any }) => {
   const { setNotifications, markAsRead } = useNotificationsC();
   const api = ItinerariosAPI.getInstance();
+  const router = useRouter();
   // Estados para manejar las acciones de la tarjeta
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionResult, setActionResult] = useState<
@@ -100,7 +102,7 @@ export const NotificationCard = ({ notification }: { notification: any }) => {
   const isRequest =
     tipo?.toUpperCase() === "FRIEND_REQUEST" ||
     tipo?.toUpperCase() === "SOLICITUD";
-  const bgClass = leido ? "bg-white" : "bg-blue-50/60";
+  const bgClass = leido ? "" : "bg-gray-200 dark:bg-gray-700";
 
   const removeNotification = () => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -155,6 +157,10 @@ export const NotificationCard = ({ notification }: { notification: any }) => {
     if (!leido) {
       markAsRead(id);
     }
+    // Navega solo si el destino es válido
+    if (destination && destination !== "#") {
+      router.push(destination);
+    }
   };
 
   // Lógica de redirección mejorada
@@ -190,6 +196,7 @@ export const NotificationCard = ({ notification }: { notification: any }) => {
         <Link
           href={`/viajero/perfil/${actor_username}`}
           className="relative shrink-0 cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
         >
           <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-gray-100 shadow-sm">
             <AvatarImage
@@ -209,13 +216,9 @@ export const NotificationCard = ({ notification }: { notification: any }) => {
 
         {/* 2. CONTENIDO TEXTO */}
         <div className="flex-1 min-w-0">
-          <Link
-            href={destination}
-            className="block"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="text-sm text-gray-800 leading-snug">
-              <span className="font-bold text-gray-900">{actor_nombre}</span>{" "}
+          <div className="block">
+            <p className="text-sm leading-snug">
+              <span className="font-bold ">{actor_nombre}</span>{" "}
               {mensaje}
             </p>
             <p className="text-xs text-gray-400 mt-1">
@@ -227,7 +230,7 @@ export const NotificationCard = ({ notification }: { notification: any }) => {
                   })
                 : "Ahora"}
             </p>
-          </Link>
+          </div>
 
           {/* 3. BOTONES (Solo si es solicitud de amistad) */}
           {isRequest && (
