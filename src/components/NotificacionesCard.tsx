@@ -167,10 +167,10 @@ export const NotificationCard = ({ notification }: { notification: any }) => {
       case "FRIEND_REJECTED":
         return `/viajero/perfil/${actor_username}`;
       case "NEW_POST":
-        return `/viajero/itinerarios/${linkId}/verPublicacion`;
+        return `/viajero/publicaciones/${linkId}`;
       case "COMMENT":
       case "LIKE":
-        return `/viajero/publicacion/${linkId}`; // Asumiendo una ruta para ver una publicación específica
+        return `/viajero/publicaciones/${linkId}`; // Asumiendo una ruta para ver una publicación específica
 
       case "REPORT":
         return `/admin/reportes`; // Asumiendo una ruta para ver el reporte en admin

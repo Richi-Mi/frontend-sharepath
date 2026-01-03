@@ -20,6 +20,7 @@ import type {
 } from "@/api/interfaces/ApiRoutes";
 
 import { cn } from "@/lib/utils";
+import { getCategoryStyle } from "@/lib/category-utils";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -513,37 +514,48 @@ function ItinerarySummaryPanel({
                 </div>
 
                 <div className="p-3 space-y-2">
-                  {d.places.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-3 rounded-xl border border-border/40 bg-background px-3 py-2"
-                    >
-                      <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-muted shrink-0">
-                        {p.foto_url ? (
+                  {d.places.map((p) => {
+                    const style = getCategoryStyle(p.category ?? undefined);
+                    const imageSrc = p.foto_url || style.defaultImage;
+                    const Icon = style.icon;
+
+                    return (
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-3 rounded-xl border border-border/40 bg-background px-3 py-2"
+                      >
+                        <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-muted shrink-0">
                           <Image
-                            src={p.foto_url}
+                            src={imageSrc}
                             alt={p.nombre}
                             fill
                             className="object-cover"
                           />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-                            <MapPin className="h-4 w-4 opacity-50" />
-                          </div>
-                        )}
-                      </div>
+                        </div>
 
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold truncate">
-                          {p.nombre}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {p.mexican_state ? p.mexican_state : " "}
-                          {p.category ? ` · ${p.category}` : ""}
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate">
+                            {p.nombre}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                            {p.mexican_state && <span>{p.mexican_state}</span>}
+                            {p.mexican_state && (
+                              <span className="opacity-30">·</span>
+                            )}
+                            <span
+                              className={cn(
+                                "flex items-center gap-1 font-medium",
+                                style.color
+                              )}
+                            >
+                              <Icon className="h-3 w-3" />
+                              {style.name}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
