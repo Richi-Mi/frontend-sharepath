@@ -287,7 +287,7 @@ function RoutingLayer({
           draggableWaypoints: false,
           fitSelectedRoutes: false,
           createMarker: () => null,
-        });
+        } as any);
 
         control.on("routesfound", function (e: any) {
           const routes = e.routes;

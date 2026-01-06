@@ -50,7 +50,7 @@ export default function Ruta({ destinos }: RutaProps)
                 addWaypoints: false, //Evita que el usuario agregue puntos arrastrando
                 draggableWaypoints: false,
                 show: false //Oculta las intrucciones de como llegar
-            }).addTo(map);
+            } as any).addTo(map);
         }
     }, [map, destinos]); //Se ejecuta cada que el mapa o los destinos cambian
 
