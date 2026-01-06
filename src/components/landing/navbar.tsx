@@ -10,37 +10,15 @@ import { ChevronRight, Github } from "lucide-react";
 
 import { ThemeToggle } from "./theme-toggle";
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
+
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   {
-    label: "Features",
-    href: "#features",
-    dropdownItems: [
-      {
-        title: "Modern product teams",
-        href: "/#feature-modern-teams",
-        description:
-          "Mainline is built on the habits that make the best product teams successful",
-      },
-      {
-        title: "Resource Allocation",
-        href: "/#resource-allocation",
-        description: "Mainline your resource allocation and execution",
-      },
-    ],
+    label: "Ingresar",
+    href: "/sign-in",
   },
-  { label: "About Us", href: "/about" },
-
-  { label: "Contact", href: "/contact" },
+  { label: "Registrarse", href: "/sign-up" },
 ];
 
 export const Navbar = () => {
@@ -130,7 +108,6 @@ export const Navbar = () => {
               <span className="relative z-10">Registrarse</span>
             </Button>
           </Link>
-          
 
           {/* Hamburger Menu Button (Mobile Only) */}
           <button

@@ -236,9 +236,7 @@ export default function EditAccountPage() {
             </Button>
             <h1 className="text-lg font-bold">Configuración de Cuenta</h1>
           </div>
-          <div className="text-sm text-muted-foreground hidden sm:block">
-            Cambios guardados localmente hasta confirmar.
-          </div>
+
         </div>
       </header>
 
