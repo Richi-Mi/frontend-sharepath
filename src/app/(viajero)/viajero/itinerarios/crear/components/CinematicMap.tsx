@@ -284,9 +284,9 @@ function RoutingLayer({
           },
           show: false,
           addWaypoints: false,
-          // draggableWaypoints: false,
+          draggableWaypoints: false,
           fitSelectedRoutes: false,
-          // createMarker: () => null,
+          createMarker: () => null,
         });
 
         control.on("routesfound", function (e: any) {
@@ -368,8 +368,8 @@ export function CinematicMap({
     streets:
       "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
     satellite:
-      // "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      // "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg",
   };
 
   // Formato stats

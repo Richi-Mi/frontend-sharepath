@@ -280,7 +280,7 @@ function RoutingLayer({
           },
           show: false,
           addWaypoints: false,
-          // draggableWaypoints: false,
+          draggableWaypoints: false,
           fitSelectedRoutes: false,
           // createMarker: () => null,
         });

@@ -26,8 +26,8 @@ export default function Mapa(props: MapProps) {
     <MapContainer center={posicion} zoom={zoom} scrollWheelZoom={true} className="h-full w-full">
       <TileLayer
         attribution='&copy; <a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}">OpenStreetMap</a> contributors'
-        // url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        url="https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg"
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        // url="https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg"
       />
 
       <Ruta destinos={itinerario} />

@@ -48,7 +48,7 @@ export default function Ruta({ destinos }: RutaProps)
                 waypoints: destinosLeaflet,
                 routeWhileDragging: false,
                 addWaypoints: false, //Evita que el usuario agregue puntos arrastrando
-                //draggableWaypoints: false,
+                draggableWaypoints: false,
                 show: false //Oculta las intrucciones de como llegar
             }).addTo(map);
         }
