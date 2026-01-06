@@ -15,6 +15,6 @@ export const SUGGESTIONS: PlaceUI[] = RAW.map((r) => ({
   name: r.name,
   city: r.city,
   tag: r.tag,
-  image: r.img,
+  img: r.img,
   ...(GEO[r.name] ?? {}),
 }));

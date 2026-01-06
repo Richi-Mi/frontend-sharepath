@@ -53,6 +53,7 @@ export function PlanDeViaje({
             {/* Ejemplo de otra lista temática del mismo día: */}
             <DaySection
               dayKey={d.key}
+              date={d.date}
               title="Restaurantes"
               recommended={dataset
                 .filter((p) => p.tag.toLowerCase() === "gastronomía")

@@ -1,5 +1,5 @@
 // Logica del backend para verificar el token de google
-export const CLIENT_ID =
+const CLIENT_ID =
   "934272342967-it58ahq1jmjt347vm7t1mopi7hnql9dl.apps.googleusercontent.com"; // --ID de google cloud
 import { OAuth2Client } from "google-auth-library"; //-- libreria para verificar el token
 import { NextResponse } from "next/server";

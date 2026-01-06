@@ -30,10 +30,10 @@ const REGION_LABELS: Record<string, string> = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: Promise<Search> | Search;
+  searchParams?: Promise<Search>;
 }) {
   // ✅ soporta Next 15/16 con dynamic APIs
-  const sp = (await searchParams) as Search | undefined;
+  const sp = await searchParams;
 
   const region =
     REGION_LABELS[(sp?.region as string) ?? ""] ?? "Zona centro (MX)";
@@ -50,7 +50,7 @@ export default async function Page({
           key: `day-${i}`,
           date: addDays(start, i),
         }))
-      : [{ key: "day-0", date: undefined }];
+      : [{ key: "day-0", date: new Date() }];
 
   return (
     <EditorShell

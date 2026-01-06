@@ -39,7 +39,7 @@ export function useItineraryLogic() {
   const [isOptimizing, setIsOptimizing] = useState(false);
 
   // Acceso al Store
-  const { meta, actividades, setActivities, clear } =
+  const { meta, actividades, setActivities } =
     useItineraryBuilderStore();
 
   // ========================================================================
@@ -153,6 +153,7 @@ export function useItineraryLogic() {
               mexican_state: place.mexican_state || "Desconocido", // Fallback seguro
               google_score: place.google_score || 0,
               total_reviews: place.total_reviews || 0,
+              descripcion: place.descripcion || "",
             };
             await api.createLugar(placePayload);
           } catch (e) {
@@ -173,7 +174,7 @@ export function useItineraryLogic() {
       });
 
       // Limpiar y Redirigir
-      clear();
+      // clear();
       router.push("/viajero/itinerarios");
       // O redirigir al detalle: router.push(`/viajero/itinerarios/${response.id}`);
     } catch (error: any) {

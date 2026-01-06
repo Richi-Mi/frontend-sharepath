@@ -41,7 +41,7 @@ export default function ViajeroLanding() {
 
       // Extraer ubicación del itinerario o usar placeholder
       let ubicacion = "México";
-      if (pub.itinerario.ubicacion) {
+      if (pub.itinerario && pub.itinerario.ubicacion) {
         ubicacion = pub.itinerario.ubicacion;
       } else if (pub.descripcion) {
         // Intentar extraer ubicación de la descripción
@@ -60,11 +60,11 @@ export default function ViajeroLanding() {
       }
 
       // Extraer categorías/tags del título o descripción
-      const tags = [];
+      const tags = [] as any;
       const categorias = ["playa", "montaña", "ciudad", "aventura", "cultural", "gastronómico", "romántico"];
       
       categorias.forEach(cat => {
-        if (
+        if (pub.itinerario && pub.itinerario.title &&
           pub.itinerario.title.toLowerCase().includes(cat) ||
           (pub.descripcion && pub.descripcion.toLowerCase().includes(cat))
         ) {
@@ -74,7 +74,7 @@ export default function ViajeroLanding() {
 
       return {
         id: pub.id,
-        titulo: pub.itinerario.title,
+        titulo: pub.itinerario?.title,
         calificacion: calificacionPromedio || 0,
         totalResenas,
         usuario: {
@@ -83,12 +83,12 @@ export default function ViajeroLanding() {
           nombre_completo: pub.user_shared?.nombre_completo,
         },
         descripcion: pub.descripcion,
-        itinerarioId: pub.itinerario.id,
+        itinerarioId: pub.itinerario?.id,
         itinerario: pub.fotos
           ? pub.fotos.map((foto) => ({
               id: foto.id,
               url: foto.foto_url,
-              alt: `Imagen del itinerario ${pub.itinerario.title}`,
+              alt: `Imagen del itinerario ${pub.itinerario?.title}`,
             }))
           : [],
         fecha: new Date(pub.created_at || Date.now()).toLocaleDateString(),

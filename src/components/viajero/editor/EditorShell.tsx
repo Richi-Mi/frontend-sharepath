@@ -28,7 +28,7 @@ export function EditorShell({
   nights,
 }: {
   region?: string;
-  days: { key: string; date?: Date }[];
+  days: { key: string; date: Date }[];
   start?: Date;
   end?: Date;
   nights: number;
@@ -98,7 +98,7 @@ export function EditorShell({
               <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
                 <div className="w-full md:max-w-[560px]">
                   <PlaceSearch
-                    filterTag={filterTag}
+                    // filterTag={filterTag}
                     onPick={(p) => {
                       const first = days[0]?.key;
                       if (first) addPlace(first, p);
@@ -107,7 +107,7 @@ export function EditorShell({
                 </div>
                 <CategoryChips
                   categories={CATEGORIES}
-                  active={filterTag}
+                  // active={filterTag}
                   onChange={setFilterTag}
                 />
               </div>
@@ -134,8 +134,8 @@ export function EditorShell({
                       { key: "d3", date: new Date(2025, 10, 3) },
                       { key: "d4", date: new Date(2025, 10, 4) },
                     ]}
-                    activeKey="d1"
-                    onPick={(idx) => console.log("ir a día", idx)}
+                    // activeKey="d1"
+                    // onPick={(idx) => console.log("ir a día", idx)}
                   />
                 );
               })}
@@ -161,7 +161,7 @@ export function EditorShell({
             : "hidden md:block"
         )}
       >
-        <MapPanel onCloseMobile={() => setMapOpenMobile(false)} />
+        {/* <MapPanel onCloseMobile={() => setMapOpenMobile(false)} /> */}
       </aside>
     </div>
   );

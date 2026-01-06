@@ -12,7 +12,7 @@ export default function LugarRecomendado() {
           {/* Imagen: 1/3 */}
           <div className="w-1/3 flex items-center">
             <Image
-              className="h-auto"
+              // className="h-auto"
               src="/img/bellas_artes.jpg"
               alt="Bellas Artes"
               width={400}

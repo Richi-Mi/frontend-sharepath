@@ -26,6 +26,17 @@ export interface Usuario {
   correo: string;
   itineraryCount: number | null;
   friendsCount: number | null;
+  bio: string;
+  ciudad: string;
+  pais: string;
+  idiomas: [];
+  intereses: [];
+  created_at: string;
+  stats: {
+    itinerarios_publicos: number,
+    lugares_visitados: number,
+    amigos: number,
+  };
 }
 
 export interface ErrorResponse {
@@ -56,7 +67,7 @@ export interface CreateItinerarioResponse {
 }
 
 export interface ItinerarioData {
-  id: number | string;
+  id: string;
   title: string;
   actividades: Actividad[];
   createdAt: string;
@@ -65,6 +76,7 @@ export interface ItinerarioData {
   start_date?: string;
   end_date?: string;
   regions?: string[];
+  descripcion?: string;
 }
 
 export interface ItinerarioListResponse {
@@ -457,7 +469,7 @@ export interface Publicacion {
   id: number;
   descripcion?: string | null;
   privacity_mode: boolean;
-  itinerario: { id: number; nombre?: string; title?: string } | null;
+  itinerario: { id: number; nombre?: string; title?: string; ubicacion?: string } | null;
   fotos?: Foto[];
   resenas?: Resena[];
   user_shared?: Usuario;

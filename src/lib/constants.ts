@@ -2,13 +2,19 @@
 
 export type RegionKey = "cdmx" | "edomex" | "hgo" | "mor" | "qro";
 
-export const REGIONS: Record<string, string> = {
-  cdmx: "Ciudad de México",
-  edomex: "Estado de México",
-  hgo: "Hidalgo",
-  mor: "Morelos",
-  qro: "Querétaro",
+export type RegionValue = {
+  value: RegionKey;
+  label: string;
+  hint?: string;
 };
+
+export const REGIONS: RegionValue[] = [
+  { value: "cdmx", label: "Ciudad de México", hint: "CDMX" },
+  { value: "edomex", label: "Estado de México", hint: "EdoMex" },
+  { value: "hgo", label: "Hidalgo", hint: "Hgo" },
+  { value: "mor", label: "Morelos", hint: "Mor" },
+  { value: "qro", label: "Querétaro", hint: "Qro" },
+];
 
 export type Place = { id: string; name: string; city: string; tag: string };
 

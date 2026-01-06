@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardTitle } from "./ui/card";
 import { GripVertical, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { Input } from "./ui/input";
-import { Actividad } from "@/app/(viajero)/viajero/itinerarios/crear/page";
+import type { Actividad } from "@/api/interfaces/ApiRoutes";
 
 import { getDefaultImageForCategory } from "@/lib/category-utils";
 interface DiaDetalleProps {
@@ -22,7 +22,7 @@ export default function DiaDetalle({
   onDelete,
   dragListeners,
 }: DiaDetalleProps) {
-  const imageUrl = lugar.foto_url || getDefaultImageForCategory(lugar.category);
+  // const imageUrl = lugar.foto_url || getDefaultImageForCategory(lugar.category);
 
   return (
     <div>
@@ -35,23 +35,23 @@ export default function DiaDetalle({
 
           <div className="w-1/3">
             <div className="relative w-full aspect-video rounded-md bg-muted overflow-hidden">
-              <Image
+              {/* <Image
                 // Usa la foto del lugar si existe, si no, una por categoría
                 src={imageUrl}
                 alt={lugar.nombre}
                 fill
                 className="object-cover"
-              />
+              /> */}
             </div>
           </div>
 
           {/* Texto: 2/3 */}
           <div className="w-2/3 flex flex-col justify-center">
             <CardTitle className="text-xl font-semibold flex gap-2 justify-between">
-              {lugar.nombre}
+              {/* {lugar.nombre} */}
               <Trash2
                 className="text-red-500 cursor-pointer flex-shrink-0"
-                onClick={() => onDelete(lugar.id)}
+                // onClick={() => onDelete(lugar.id)}
               ></Trash2>
             </CardTitle>
              <CardDescription> 

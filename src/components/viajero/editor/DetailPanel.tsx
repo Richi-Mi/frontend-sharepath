@@ -4,8 +4,8 @@ import { useTrip } from "@/stores/trip-store";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export function DetailPanel() {
-  const { selected } = useTrip();
-  if (!selected) {
+  const { selectedPlace } = useTrip();
+  if (!selectedPlace) {
     return (
       <div className="h-full grid place-items-center text-sm text-muted-foreground">
         Selecciona un lugar para ver detalles.
@@ -16,16 +16,16 @@ export function DetailPanel() {
   return (
     <div className="h-full flex flex-col">
       <div className="p-3 border-b">
-        <h3 className="font-semibold leading-tight">{selected.name}</h3>
+        <h3 className="font-semibold leading-tight">{selectedPlace.name}</h3>
         <p className="text-xs text-muted-foreground">
-          {selected.city} • {selected.tag}
+          {selectedPlace.city} • {selectedPlace.tag}
         </p>
       </div>
 
       <div className="p-0 flex-1 overflow-y-auto">
         <img
-          src={selected.image}
-          alt={selected.name}
+          src={selectedPlace.img}
+          alt={selectedPlace.name}
           className="w-full h-40 object-cover border-b"
         />
         <Tabs defaultValue="about" className="p-3">

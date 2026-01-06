@@ -7,7 +7,8 @@ import * as GeoSearch from "leaflet-geosearch";
 // --- Tus importaciones Reales ---
 import { ApiSearchProvider } from "@/api/ApiSearchProvider"; 
 import { LugarData } from "@/api/interfaces/ApiRoutes";
-import { lugar } from "@/app/(dashboard)/dashboard/vermapa/page";
+// import { lugar } from "@/app/(dashboard)/dashboard/vermapa/page";
+import { lugar } from "@/app/(viajero)/viajero/vermapa/page";
 
 // --- Estilos ---
 import "leaflet-geosearch/dist/geosearch.css";
@@ -45,10 +46,11 @@ export default function BusquedaMapa({ onAddLugar }: BusquedaProps) {
       const lugarDeLaDB: LugarData = e.location.raw; 
 
       const lugarParaElMapa: lugar = {
-        id: lugarDeLaDB.id_api_place || Date.now().toString(), // Fallback ID
+        id: Number("lugarDeLaDB.id_api_place") || Date.now(), // Fallback ID
         nombre: lugarDeLaDB.nombre,
         lat: lugarDeLaDB.latitud,   
-        lng: lugarDeLaDB.longitud,  
+        lng: lugarDeLaDB.longitud,
+        categoria: lugarDeLaDB.category,  
       };
 
       onAddLugar(lugarParaElMapa);

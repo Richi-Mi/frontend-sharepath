@@ -38,10 +38,12 @@ export function DaySection({
   dayKey,
   date,
   recommended,
+  title
 }: {
   dayKey: string;
   date: Date;
   recommended: Place[];
+  title?: string;
 }) {
   const { byDay, addPlace, removePlace, movePlace, selectPlace } = useTrip();
   const items = byDay[dayKey] ?? [];

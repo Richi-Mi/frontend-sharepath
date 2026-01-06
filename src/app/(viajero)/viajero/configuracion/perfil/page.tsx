@@ -51,7 +51,7 @@ interface TravelerProfile {
   username: string;
   name: string;
   email: string;
-  avatar: string;
+  avatar: string | null;
   bio?: string;
   ciudad?: string;
   pais?: string;

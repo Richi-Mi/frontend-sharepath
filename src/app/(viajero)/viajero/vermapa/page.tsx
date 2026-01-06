@@ -16,6 +16,7 @@ export interface lugar {
   id: number;
   nombre: string;
   lat: number;
+  // foto_url: string;
   lng: number;
   categoria: string; // Añadimos el campo categoría
 }

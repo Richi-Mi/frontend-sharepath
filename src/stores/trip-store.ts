@@ -14,6 +14,7 @@ export type Place = {
   tips?: string[];
   reviews?: string[];
   photos?: string[];
+  description?: string;
 };
 
 type Day = { key: string; date: Date };

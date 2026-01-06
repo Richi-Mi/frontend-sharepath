@@ -133,13 +133,13 @@ export default function CreateItineraryForm() {
     reset,
     formState: { errors, isDirty },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    // resolver: zodResolver(schema),
     defaultValues: {
       nombre: "",
       regions: [],
       start: null,
       end: null,
-      visibility: "friends",
+      // visibility: "friends",
       companions: [],
     },
     mode: "onTouched",
@@ -148,7 +148,7 @@ export default function CreateItineraryForm() {
   const regions = watch("regions");
   const start = watch("start");
   const end = watch("end");
-  const visibility = watch("visibility");
+  // const visibility = watch("visibility");
   const nombreActual = watch("nombre");
   const companions = watch("companions");
 
@@ -182,7 +182,7 @@ export default function CreateItineraryForm() {
           regions,
           start,
           end,
-          visibility,
+          // visibility,
           companions,
         };
         localStorage.setItem("itinerary:create:draft", JSON.stringify(draft));
@@ -191,7 +191,8 @@ export default function CreateItineraryForm() {
       }
     }, 300);
     return () => clearTimeout(id);
-  }, [nombreActual, regions, start, end, visibility, companions]);
+  // }, [nombreActual, regions, start, end, visibility, companions]);
+  }, [nombreActual, regions, start, end, companions]);
 
   /* ---------- Sugerir nombre no invasivo ---------- */
   React.useEffect(() => {
@@ -299,9 +300,9 @@ export default function CreateItineraryForm() {
     setMeta({
       title: values.nombre,
       regions: values.regions as RegionValue[],
-      start: values.start ?? null,
-      end: values.end ?? null,
-      visibility: values.visibility,
+      start: values.start ?? new Date(),
+      end: values.end ?? new Date(),
+      // visibility: values.visibility,
       companions: values.companions,
     });
 

@@ -87,7 +87,7 @@ export default function AccountPage() {
               {/* Avatar e Info Principal */}
               <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
                 <Avatar className="h-28 w-28 text-4xl border-4 border-white shadow-md bg-white">
-                  <AvatarImage src={user.foto_url} alt="Foto de perfil" className="object-cover" />
+                  <AvatarImage src={user.foto_url ? user.foto_url : ""} alt="Foto de perfil" className="object-cover" />
                   <AvatarFallback className="bg-gray-100 text-gray-500 font-bold">
                     {user.username?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>

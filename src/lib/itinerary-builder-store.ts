@@ -49,6 +49,8 @@ export type BuilderMeta = {
   companions: string[];
 };
 
+export type RegionValue = "Hidalgo" | "Morelos" | "Querétaro" | "Ciudad de Mexico" | "Estado de Mexico";
+
 type ItineraryBuilderState = {
   meta: BuilderMeta | null;
   actividades: BuilderActivity[];

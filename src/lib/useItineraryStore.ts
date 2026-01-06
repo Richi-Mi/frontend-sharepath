@@ -291,8 +291,8 @@ export const useItineraryStore = create<Store>()(
           filters.q,
           filters.category as any
         );
-        const best = suggested.slice(0, 5);
-        best.forEach((p) => get().addPlaceToActive(p));
+        // const best = suggested.slice(0, 5);
+        // best.forEach((p) => get().addPlaceToActive(p));
       },
 
       setShowRoute(b) {

@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { REGIONS, type RegionValue } from "@/lib/constants/regions";
+import { RegionKey, REGIONS, type RegionValue } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { IconMapPinFilled } from "@tabler/icons-react";
 
@@ -26,7 +26,7 @@ export function DestinationCombobox({
   onChange,
 }: {
   value?: string;
-  onChange: (val: RegionValue) => void;
+  onChange: (val: RegionKey) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const selected = REGIONS.find((r) => r.value === value);

@@ -118,7 +118,7 @@ export function PlaceSearch({ onPick }: { onPick: (p: Place) => void }) {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <img
-                  src={p.image}
+                  src={p.img}
                   alt={p.name}
                   className="size-11 rounded-md object-cover border"
                 />

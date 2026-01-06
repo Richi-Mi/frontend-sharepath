@@ -232,7 +232,7 @@ export function PlaceSearchDialog({
         stateFilter,
         categoryFilter,
         nombreParaBuscar,
-        ordenApi // <--- Asegúrate de haber agregado este param en tu clase API
+        // ordenApi // <--- Asegúrate de haber agregado este param en tu clase API
       );
 
       let rawData = Array.isArray(resp) ? resp : (resp as any).lugares || [];
@@ -252,7 +252,7 @@ export function PlaceSearchDialog({
           stateFilter,
           categoryFilter,
           undefined, // Sin nombre
-          "reviews"
+          // "reviews"
         );
 
         const backupData = Array.isArray(respBackup)

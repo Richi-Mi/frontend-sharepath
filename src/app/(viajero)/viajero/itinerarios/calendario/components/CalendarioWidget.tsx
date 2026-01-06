@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, ChevronRight, CalendarDays, Map } from "lucide-react";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { DayPickerLocale } from "react-day-picker";
 
 interface CalendarWidgetProps {
   selected: Date;
@@ -41,7 +42,7 @@ export function CalendarWidget({
             mode="single"
             selected={selected}
             onSelect={(d) => d && onSelect(d)}
-            locale={es}
+            locale={es as unknown as Partial<DayPickerLocale>}
             numberOfMonths={monthsVisible}
             showOutsideDays={false}
             className="w-full p-3 sm:p-6" // Padding responsivo
@@ -55,8 +56,8 @@ export function CalendarWidget({
             }}
             components={{
               // Iconos de navegación responsivos
-              IconLeft: () => <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 hover:text-indigo-600 transition-colors" />,
-              IconRight: () => <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 hover:text-indigo-600 transition-colors" />,
+              // IconLeft: () => <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 hover:text-indigo-600 transition-colors" />,
+              // IconRight: () => <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 hover:text-indigo-600 transition-colors" />,
             }}
             classNames={{
               months: "flex flex-col gap-4 sm:gap-8",

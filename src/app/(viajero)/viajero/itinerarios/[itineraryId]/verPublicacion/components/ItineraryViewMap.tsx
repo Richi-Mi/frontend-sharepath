@@ -259,9 +259,9 @@ function RoutingLayer({
           },
           show: false, 
           addWaypoints: false,
-          draggableWaypoints: false,
+          // draggableWaypoints: false,
           fitSelectedRoutes: false, 
-          createMarker: () => null,
+          // createMarker: () => null,
         });
 
         control.on("routesfound", function (e: any) {

@@ -87,7 +87,7 @@ const destinosPopulares: LugarCard[] = [
 ];
 
 // Componente Custom Tooltip para la gráfica
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white p-3 border border-gray-100 shadow-xl rounded-xl">

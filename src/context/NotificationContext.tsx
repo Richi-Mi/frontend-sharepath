@@ -90,7 +90,7 @@ export const NotificationProvider = ({
               return false;
             }
             // Si no es amigo, solo mostrar la notificación si la solicitud aún está pendiente.
-            return solicitudesPendientesIds.has(notif.resourceId.toString());
+            return solicitudesPendientesIds.has(notif.resourceId?.toString());
           }
 
           // Para todos los demás tipos de notificaciones, las mostramos.

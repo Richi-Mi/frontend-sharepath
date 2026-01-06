@@ -72,7 +72,7 @@ export function DayCard({
                   title={`Añadir ${p.name}`}
                 >
                   <img
-                    src={p.image}
+                    src={p.img}
                     alt={p.name}
                     className="h-28 w-full object-cover rounded-t-lg"
                   />
@@ -101,7 +101,7 @@ export function DayCard({
                 <div className="group flex items-center justify-between gap-2 rounded-lg border bg-card/40 p-2">
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src={p.image}
+                      src={p.img}
                       alt={p.name}
                       className="size-12 rounded-md object-cover border"
                     />

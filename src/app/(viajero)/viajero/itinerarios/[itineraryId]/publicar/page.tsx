@@ -4,6 +4,6 @@ import {useParams} from "next/navigation";
 
 export default function Page() {
   const Params = useParams();
-  const { itineraryId} = Params;
+  const itineraryId = Params.itineraryId as string;
   return <ItineraryReadPublic id={itineraryId}/>;
 }

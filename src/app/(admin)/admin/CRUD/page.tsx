@@ -104,7 +104,7 @@ export default function ItinerariosPage() {
         const enriched = await Promise.all(
           mapped.map(async (base) => {
             try {
-              const detalle = await api.getItinerarioById(base.id);
+              const detalle = await api.getItinerarioById(base.id) as any;
               const autorDetalle = detalle.usuario || detalle.user || detalle.owner || detalle.autor || detalle.creador || detalle.created_by || {};
               const actividadesDetalle = Array.isArray(detalle.actividades)
                 ? detalle.actividades

@@ -21,7 +21,7 @@ export type PlaceCategory =
   | "bar";
 
 export type Place = {
-  id_api_place: string | number;
+  id_api_place: string;
 
   state: StateKey;
   nombre: string;

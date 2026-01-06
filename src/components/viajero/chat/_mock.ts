@@ -12,13 +12,13 @@ export const mockConversations: Conversation[] = [
     tripId: "trip_cdmx_1101",
     members: [me, ana, luis],
     unread: 2,
-    lastMessage: {
-      id: "m7",
-      authorId: "u_ana",
-      text: "¿Reservamos restaurante cerca de Bellas Artes?",
-      createdAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
-      status: "delivered",
-    },
+    // lastMessage: {
+    //   id: "m7",
+    //   authorId: "u_ana",
+    //   text: "¿Reservamos restaurante cerca de Bellas Artes?",
+    //   createdAt: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+    //   status: "delivered",
+    // },
     messages: [
       {
         id: "m1",
@@ -78,13 +78,13 @@ export const mockConversations: Conversation[] = [
     tripId: "trip_tolantongo",
     members: [me, ana],
     unread: 0,
-    lastMessage: {
-      id: "x1",
-      authorId: "u_me",
-      text: "Subí las fotos al feed 😎",
-      createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-      status: "seen",
-    },
+    // lastMessage: {
+    //   id: "x1",
+    //   authorId: "u_me",
+    //   text: "Subí las fotos al feed 😎",
+    //   createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+    //   status: "seen",
+    // },
     messages: [
       {
         id: "x1",

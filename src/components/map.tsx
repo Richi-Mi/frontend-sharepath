@@ -9,7 +9,8 @@ import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 
 import BusquedaMapa from "./busquedaMapa"
 import Ruta from "./ruta"
-import { lugar } from "@/app/(dashboard)/dashboard/reportes/page"
+// import { lugar } from "@/app/(dashboard)/dashboard/reportes/page"
+import { lugar } from "@/app/(viajero)/viajero/vermapa/page";
 
 interface MapProps{
   posicion: LatLngExpression,

@@ -70,7 +70,7 @@ export function NavUser() {
         setUser({
           name: data.username,
           email: data.correo,
-          avatar: data.foto_url,
+          avatar: data.foto_url || "",
         });
         setErrorUser(null);
       } catch (error) {
