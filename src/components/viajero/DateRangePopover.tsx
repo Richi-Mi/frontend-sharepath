@@ -7,7 +7,7 @@ import { es } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { DayPickerLocale } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
 
 export function DateRangePopover({
   value,
@@ -27,7 +27,7 @@ export function DateRangePopover({
         <Calendar
           mode="range"
           numberOfMonths={2}
-          locale={es as unknown as Partial<DayPickerLocale>}
+          locale={es}
           selected={
             value.start && value.end
               ? { from: value.start, to: value.end }

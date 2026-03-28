@@ -15,6 +15,7 @@ import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import FloatingShape from "@/components/FloatingShape"
 
 const formSchema = z.object({
   correo: z.string()
@@ -72,13 +73,15 @@ export default function SignInPage() {
 
   // Se elimina el wrapper de GoogleOAuthProvider
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
+    <main className="flex min-h-screen w-full items-center justify-center p-4 bg-gradient-to-tl from-gray-900 via-blue-900 to-sky-900 relative overflow-hidden">
       <div className="flex w-full max-w-4xl min-h-[600px] overflow-hidden rounded-2xl shadow-2xl">
-
+        <FloatingShape color="bg-blue-500" size="w-64 h-64" top="70%" left="5%" delay={5} />
+        <FloatingShape color="bg-sky-500" size="w-48 h-48" top="-5%" left="80%" delay={0} />
+        
         {/* Panel Izquierdo: Imagen Decorativa */}
         <div className="hidden lg:block lg:w-1/2">
           <Image
-            src="/img/bellas_artes.jpg"
+            src="/img/museo_soumaya.jpg"
             alt="Mural del Palacio de Bellas Artes"
             width={1920}
             height={1080}

@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, ChevronRight, CalendarDays, Map } from "lucide-react";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { DayPickerLocale } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
 
 interface CalendarWidgetProps {
   selected: Date;
@@ -42,7 +42,7 @@ export function CalendarWidget({
             mode="single"
             selected={selected}
             onSelect={(d) => d && onSelect(d)}
-            locale={es as unknown as Partial<DayPickerLocale>}
+            locale={es}
             numberOfMonths={monthsVisible}
             showOutsideDays={false}
             className="w-full p-3 sm:p-6" // Padding responsivo

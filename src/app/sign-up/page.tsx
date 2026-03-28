@@ -17,6 +17,9 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 
 import { ItinerariosAPI } from "@/api/ItinerariosAPI";
 
+import FloatingShape from "@/components/FloatingShape"
+import PasswordSM from "@/components/PasswordSM"
+
 // 1. Definimos el "contrato" de validación con Zod
 const formSchema = z.object({
   nombre_completo: z.string()
@@ -55,7 +58,8 @@ const formSchema = z.object({
     })
     .refine((password) => {
       // Debe contener mayúscula, minúscula, número y caracteres especiales válidos (#, $, _, ?, ¿, *)
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$_?¿*]).{8,}$/;
+      // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$_?¿*]).{8,}$/;
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
       return passwordRegex.test(password);
     }, {
       message: "La contraseña debe contener mayúscula, minúscula, número y un carácter especial válido (#, $, _, ?, ¿, *).",
@@ -145,7 +149,11 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
+    // <main className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
+    <main className="flex min-h-screen w-full items-center justify-center p-4 bg-gradient-to-br from-gray-900 via-blue-900 to-sky-900 relative overflow-hidden">
+      <FloatingShape color="bg-blue-500" size="w-64 h-64" top="-5%" left="10%" delay={0} />
+      <FloatingShape color="bg-sky-500" size="w-48 h-48" top="70%" left="80%" delay={5} />
+
       <div className="flex w-full max-w-4xl min-h-[600px] overflow-hidden rounded-2xl shadow-2xl">
         {/* Panel Izquierdo: Imagen */}
         <div className="hidden lg:block lg:w-1/2">
@@ -156,7 +164,7 @@ export default function SignUpPage() {
         <div className="flex w-full flex-col items-center justify-center bg-card p-8 lg:w-1/2">
           <div className="w-full max-w-sm text-center">
             <h2 className="mb-2 text-3xl font-bold">Regístrate</h2>
-            <p className="mb-6 text-sm text-muted-foreground">Crea tu cuenta para empezar a explorar.</p>
+            <p className="mb-4 text-sm text-muted-foreground">Crea tu cuenta para empezar a explorar.</p>
 
             {/* 4. Envolvemos el formulario con los componentes de Shadcn UI */}
             <Form {...form}>
@@ -167,9 +175,9 @@ export default function SignUpPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Input placeholder="Nombre completo" {...field} className="py-6" disabled={isLoading} />
+                        <Input placeholder="Nombre completo" {...field} className="py-5" disabled={isLoading} />
                       </FormControl>
-                      <FormMessage />
+                      {/* <FormMessage /> */}
                     </FormItem>
                   )}
                 />
@@ -179,9 +187,9 @@ export default function SignUpPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Input placeholder="Username" {...field} className="py-6" disabled={isLoading} />
+                        <Input placeholder="Username" {...field} className="py-5" disabled={isLoading} />
                       </FormControl>
-                      <FormMessage />
+                      {/* <FormMessage /> */}
                     </FormItem>
                   )}
                 />
@@ -191,9 +199,9 @@ export default function SignUpPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Input type="email" placeholder="Correo (ejemplo: usuario@dominio.com)" {...field} className="py-6" disabled={isLoading} />
+                        <Input type="email" placeholder="Correo (ejemplo: usuario@dominio.com)" {...field} className="py-5" disabled={isLoading} />
                       </FormControl>
-                      <FormMessage />
+                      {/* <FormMessage /> */}
                     </FormItem>
                   )}
                 />
@@ -208,8 +216,9 @@ export default function SignUpPage() {
                             type={showPassword ? "text" : "password"}
                             placeholder="Contraseña"
                             {...field}
-                            className="py-6 pr-10"
+                            className="py-5 pr-10"
                             disabled={isLoading}
+                            autoComplete="new-password"
                           />
                         </FormControl>
                         <button
@@ -221,7 +230,8 @@ export default function SignUpPage() {
                           {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                         </button>
                       </div>
-                      <FormMessage />
+                      {/* <FormMessage /> */}
+                      <PasswordSM password={form.watch("password")} />
                     </FormItem>
                   )}
                 />
@@ -236,7 +246,7 @@ export default function SignUpPage() {
               </form>
             </Form>
             
-            <p className="mt-8 text-sm text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground">
               ¿Ya tienes una cuenta?{" "}
               <Link href="/sign-in" className="font-semibold text-primary hover:underline">
                 Iniciar sesión
@@ -248,4 +258,3 @@ export default function SignUpPage() {
     </main>
   );
 }
-
