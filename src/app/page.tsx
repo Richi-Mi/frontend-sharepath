@@ -14,10 +14,12 @@ import { ResourceAllocation } from "@/components/landing/resource-allocation";
 import { Testimonials } from "@/components/landing/testimonials";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
+import { AnimacionScrollT } from "@/components/landing/animacionScrollT";
 
 export default function Home() {
   return (
     <>
+      <AnimacionScrollT />
       <Navbar />
       <Background className="via-muted to-muted/80">
         <Hero />
